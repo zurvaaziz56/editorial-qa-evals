@@ -1,7 +1,7 @@
-# Seed vocabulary from rubric C9; contextual matching comes in a later task.
+# C9 vocabulary. Aliases belong to the same family for severity counting.
 swaps:
   - {uk: colour, us: color}
-  - {uk: GBP, us: "$"}
+  - {uk: GBP, us: "$", uk_aliases: ["£"], us_aliases: [USD]}
   - {uk: HMRC, us: IRS}
   - {uk: NHS, us: Medicare}
   - {uk: pension, us: "401(k)"}
