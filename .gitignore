@@ -1,0 +1,8 @@
+private/
+.env
+*.key
+__pycache__/
+.venv/
+.pytest_cache/
+runs/*/raw/
+START_HERE.md
