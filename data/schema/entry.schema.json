@@ -1,0 +1,267 @@
+{
+  "$defs": {
+    "Brief": {
+      "additionalProperties": false,
+      "properties": {
+        "tips": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 5,
+          "title": "Tips",
+          "type": "array"
+        },
+        "hook": {
+          "title": "Hook",
+          "type": "string"
+        },
+        "tone": {
+          "title": "Tone",
+          "type": "string"
+        },
+        "expert": {
+          "$ref": "#/$defs/Expert"
+        }
+      },
+      "required": [
+        "tips",
+        "hook",
+        "tone",
+        "expert"
+      ],
+      "title": "Brief",
+      "type": "object"
+    },
+    "Expert": {
+      "additionalProperties": false,
+      "properties": {
+        "credential": {
+          "title": "Credential",
+          "type": "string"
+        },
+        "specialism": {
+          "title": "Specialism",
+          "type": "string"
+        }
+      },
+      "required": [
+        "credential",
+        "specialism"
+      ],
+      "title": "Expert",
+      "type": "object"
+    },
+    "HumanLabels": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "additionalProperties": {
+            "enum": [
+              "pass",
+              "fail",
+              "na"
+            ],
+            "type": "string"
+          },
+          "propertyNames": {
+            "enum": [
+              "C1",
+              "C2",
+              "C3",
+              "C4",
+              "C5",
+              "C6",
+              "C7",
+              "C8",
+              "C9",
+              "C10",
+              "C11",
+              "C12",
+              "C13"
+            ]
+          },
+          "title": "Checks",
+          "type": "object"
+        },
+        "judgment": {
+          "additionalProperties": {
+            "enum": [
+              "pass",
+              "fail",
+              "na"
+            ],
+            "type": "string"
+          },
+          "propertyNames": {
+            "enum": [
+              "J1",
+              "J2",
+              "J3",
+              "J4",
+              "J5",
+              "J6",
+              "J7"
+            ]
+          },
+          "title": "Judgment",
+          "type": "object"
+        },
+        "routing": {
+          "enum": [
+            "escalate",
+            "fix_direct",
+            "none"
+          ],
+          "title": "Routing",
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "READY",
+            "REVISE",
+            "MAJOR"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "notes": {
+          "title": "Notes",
+          "type": "string"
+        },
+        "labeled_at": {
+          "format": "date-time",
+          "title": "Labeled At",
+          "type": "string"
+        },
+        "labeler": {
+          "enum": [
+            "r1",
+            "r2"
+          ],
+          "title": "Labeler",
+          "type": "string"
+        },
+        "pass_number": {
+          "minimum": 1,
+          "title": "Pass Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "checks",
+        "judgment",
+        "routing",
+        "verdict",
+        "notes",
+        "labeled_at",
+        "labeler",
+        "pass_number"
+      ],
+      "title": "HumanLabels",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "pattern": "^(syn|anon)-[0-9]{4,}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "synthetic",
+        "anonymized"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "piece_type": {
+      "enum": [
+        "simple_pitch_list",
+        "cpr",
+        "qa"
+      ],
+      "title": "Piece Type",
+      "type": "string"
+    },
+    "region": {
+      "enum": [
+        "UK",
+        "US"
+      ],
+      "title": "Region",
+      "type": "string"
+    },
+    "task_name": {
+      "title": "Task Name",
+      "type": "string"
+    },
+    "brief": {
+      "$ref": "#/$defs/Brief"
+    },
+    "approved_labels": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Approved Labels",
+      "type": "array"
+    },
+    "body": {
+      "title": "Body",
+      "type": "string"
+    },
+    "questions": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Questions",
+      "type": "array"
+    },
+    "answers": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Answers",
+      "type": "array"
+    },
+    "injected_faults": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Injected Faults"
+    },
+    "human": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HumanLabels"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "piece_type",
+    "region",
+    "task_name",
+    "brief",
+    "approved_labels",
+    "body"
+  ],
+  "title": "Entry",
+  "type": "object"
+}

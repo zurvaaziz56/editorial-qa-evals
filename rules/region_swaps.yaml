@@ -1,0 +1,11 @@
+# Seed vocabulary from rubric C9; contextual matching comes in a later task.
+swaps:
+  - {uk: colour, us: color}
+  - {uk: GBP, us: "$"}
+  - {uk: HMRC, us: IRS}
+  - {uk: NHS, us: Medicare}
+  - {uk: pension, us: "401(k)"}
+  - {uk: Mum, us: Mom}
+  - {uk: garden, us: yard}
+  - {uk: holiday, us: vacation}
+  - {uk: flat, us: apartment}

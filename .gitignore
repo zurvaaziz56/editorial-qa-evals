@@ -6,3 +6,7 @@ __pycache__/
 .pytest_cache/
 runs/*/raw/
 START_HERE.md
+.ruff_cache/
+*.egg-info/
+build/
+dist/
