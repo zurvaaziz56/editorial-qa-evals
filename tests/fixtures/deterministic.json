@@ -1,0 +1,776 @@
+{
+  "clean": {
+    "pitch": {
+      "id": "syn-0001",
+      "source": "synthetic",
+      "piece_type": "simple_pitch_list",
+      "region": "UK",
+      "task_name": "Reviewer explains 2 rest habits",
+      "brief": {
+        "tips": [
+          "Late bedtime",
+          "Irregular routine"
+        ],
+        "hook": "Rest habits",
+        "tone": "Accessible and precise",
+        "expert": {
+          "credential": "Reviewer",
+          "specialism": "Rest habits"
+        }
+      },
+      "approved_labels": [
+        "Why it matters",
+        "How to do it"
+      ],
+      "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+    },
+    "qa": {
+      "id": "syn-0001",
+      "source": "synthetic",
+      "piece_type": "qa",
+      "region": "UK",
+      "task_name": "Reviewer explains 2 rest habits",
+      "brief": {
+        "tips": [
+          "Late bedtime",
+          "Irregular routine"
+        ],
+        "hook": "Rest habits",
+        "tone": "Accessible and precise",
+        "expert": {
+          "credential": "Reviewer",
+          "specialism": "Rest habits"
+        }
+      },
+      "approved_labels": [],
+      "body": "Q1: What supports rest?\nA1: A steady routine helps.\nQ2: What helps the evening settle?\nA2: A quiet pause helps."
+    },
+    "cpr": {
+      "id": "syn-0001",
+      "source": "synthetic",
+      "piece_type": "cpr",
+      "region": "UK",
+      "task_name": "Reviewer explains 2 rest habits",
+      "brief": {
+        "tips": [
+          "Late bedtime",
+          "Irregular routine"
+        ],
+        "hook": "Rest habits",
+        "tone": "Accessible and precise",
+        "expert": {
+          "credential": "Reviewer",
+          "specialism": "Rest habits"
+        }
+      },
+      "approved_labels": [],
+      "body": "The reviewer describes rest habits.\n\n“Small changes support rest.”\n\n1. Evening rhythm\nA steady routine supports rest. Small changes help.\n**Top tip:** Leave room for a quiet pause.\n\n2. Quiet pause\nA familiar pattern supports rest. Allow time to settle.\n**Top tip:** Make room for rest."
+    },
+    "cost": {
+      "id": "syn-0001",
+      "source": "synthetic",
+      "piece_type": "simple_pitch_list",
+      "region": "UK",
+      "task_name": "Reviewer explains 2 rest habits",
+      "brief": {
+        "tips": [
+          "Late bedtime",
+          "Irregular routine"
+        ],
+        "hook": "Rest habits",
+        "tone": "Accessible and precise",
+        "expert": {
+          "credential": "Reviewer",
+          "specialism": "Rest habits"
+        }
+      },
+      "approved_labels": [
+        "Why it matters",
+        "How to do it",
+        "Savings"
+      ],
+      "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** No extra expense. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+    }
+  },
+  "faults": [
+    {
+      "name": "missing_label",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\nHow to do it: Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C1": {
+          "span": "How to do it:",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "label_case",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why It Matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C1": {
+          "span": "Why It Matters",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        },
+        "C2": {
+          "span": "Why It Matters",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "mini_label_single",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** **Example:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C2": {
+          "span": "**Example:**",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "mini_label_across",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Tip: Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Tip: Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C2": {
+          "span": "Tip:",
+          "item_number": 1,
+          "severity": "STRUCTURAL"
+        }
+      }
+    },
+    {
+      "name": "unknown_mini_label",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** Custom cue: A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C2": {
+          "span": "Custom cue:",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "bold_emphasis",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A **steady** rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C2": {
+          "span": "**steady**",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "top_tip_pitch",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** Top tip: A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C2": {
+          "span": "Top tip:",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "placeholder_Not provided",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** Not provided. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "Not provided",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_TBD",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** TBD. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "TBD",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_To be confirmed",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** To be confirmed. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "To be confirmed",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_N/A",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** N/A. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "N/A",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_Varies",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** Varies. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "Varies",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_Check with the reviewer",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** Check with the reviewer. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "Check with the reviewer",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "placeholder_[figure to be added]",
+      "base": "cost",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n**Savings:** [figure to be added]. Existing supplies suffice.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n**Savings:** No extra expense. Existing supplies suffice."
+      },
+      "expected": {
+        "C3": {
+          "span": "[figure to be added]",
+          "item_number": 1,
+          "severity": "HARD_BLOCKER"
+        }
+      }
+    },
+    {
+      "name": "mixed_quotes",
+      "base": "qa",
+      "changes": {
+        "body": "Q1: What supports rest?\nA1: “A steady routine helps.”\nQ2: What helps the evening settle?\nA2: A quiet pause helps."
+      },
+      "expected": {
+        "C6": {
+          "span": "“A steady routine helps.”",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "partial_quotes",
+      "base": "qa",
+      "changes": {
+        "body": "Q1: What supports rest?\nA1: “A steady routine helps.\nQ2: What helps the evening settle?\nA2: A quiet pause helps."
+      },
+      "expected": {
+        "C6": {
+          "span": "“A steady routine helps.",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "unpaired_qa",
+      "base": "qa",
+      "changes": {
+        "questions": [
+          "What supports rest?",
+          "What helps?"
+        ],
+        "answers": [
+          "Rest."
+        ]
+      },
+      "expected": {
+        "C6": {
+          "span": "What helps?",
+          "item_number": 2,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "artefact_—",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady— rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C8": {
+          "span": "—",
+          "item_number": 1,
+          "severity": "MECHANICAL"
+        }
+      }
+    },
+    {
+      "name": "artefact_–",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady– rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C8": {
+          "span": "–",
+          "item_number": 1,
+          "severity": "MECHANICAL"
+        }
+      }
+    },
+    {
+      "name": "artefact_‑",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady‑ rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C8": {
+          "span": "‑",
+          "item_number": 1,
+          "severity": "MECHANICAL"
+        }
+      }
+    },
+    {
+      "name": "artefact_ - ",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady -  rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C8": {
+          "span": " - ",
+          "item_number": 1,
+          "severity": "MECHANICAL"
+        }
+      }
+    },
+    {
+      "name": "artefact_残留",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady残留 rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C8": {
+          "span": "残留",
+          "item_number": 1,
+          "severity": "MECHANICAL"
+        }
+      }
+    },
+    {
+      "name": "region_minor",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A color rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C9": {
+          "span": "color",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "region_major",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A color rhythm for Mom on vacation supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C9": {
+          "span": "color",
+          "item_number": 1,
+          "severity": "MAJOR"
+        }
+      }
+    },
+    {
+      "name": "count_headline",
+      "base": "pitch",
+      "changes": {
+        "task_name": "Reviewer explains 3 rest habits"
+      },
+      "expected": {
+        "C11": {
+          "span": "3 rest habits",
+          "item_number": null,
+          "severity": "MAJOR_MISMATCH"
+        }
+      }
+    },
+    {
+      "name": "count_words",
+      "base": "pitch",
+      "changes": {
+        "task_name": "Reviewer explains three rest habits"
+      },
+      "expected": {
+        "C11": {
+          "span": "three rest habits",
+          "item_number": null,
+          "severity": "MAJOR_MISMATCH"
+        }
+      }
+    },
+    {
+      "name": "count_leading",
+      "base": "pitch",
+      "changes": {
+        "task_name": "3 quiet rituals"
+      },
+      "expected": {
+        "C11": {
+          "span": "3",
+          "item_number": null,
+          "severity": "MAJOR_MISMATCH"
+        }
+      }
+    },
+    {
+      "name": "count_brief",
+      "base": "pitch",
+      "changes": {
+        "brief": {
+          "tips": [
+            "Late bedtime"
+          ],
+          "hook": "Rest habits",
+          "tone": "Accessible and precise",
+          "expert": {
+            "credential": "Reviewer",
+            "specialism": "Rest habits"
+          }
+        }
+      },
+      "expected": {
+        "C11": {
+          "span": "Late bedtime",
+          "item_number": null,
+          "severity": "MAJOR_MISMATCH"
+        }
+      }
+    },
+    {
+      "name": "intro_single",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\nA framing sentence.\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C12": {
+          "span": "A framing sentence.",
+          "item_number": 1,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "orphan_single",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n\nA detached closer."
+      },
+      "expected": {
+        "C12": {
+          "span": "A detached closer.",
+          "item_number": 2,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "orphan_across",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\nA detached closer.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle.\n\nA detached closer."
+      },
+      "expected": {
+        "C12": {
+          "span": "A detached closer.",
+          "item_number": 1,
+          "severity": "MAJOR"
+        }
+      }
+    },
+    {
+      "name": "preamble",
+      "base": "pitch",
+      "changes": {
+        "body": "A framing sentence.\n1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "C12": {
+          "span": "A framing sentence.",
+          "item_number": null,
+          "severity": "FLAG"
+        }
+      }
+    },
+    {
+      "name": "heading_Late Bedtime",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late Bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "Late Bedtime",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "heading_late bedtime",
+      "base": "pitch",
+      "changes": {
+        "body": "1. late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "late bedtime",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "heading_Keep a regular bedtime",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Keep a regular bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "Keep a regular bedtime",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "heading_Bedtime is always late",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Bedtime is always late\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "Bedtime is always late",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "heading_Late bedtime.",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime.\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "Late bedtime.",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "heading_An unusually long title with many words that exceeds the short heading limit",
+      "base": "pitch",
+      "changes": {
+        "body": "1. An unusually long title with many words that exceeds the short heading limit\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J2": {
+          "span": "An unusually long title with many words that exceeds the short heading limit",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_it's worth noting that",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** it's worth noting that a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "it's worth noting that",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_this is particularly important",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** this is particularly important a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "this is particularly important",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_in today's world",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** in today's world a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "in today's world",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_at the end of the day",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** at the end of the day a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "at the end of the day",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_it goes without saying",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** it goes without saying a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "it goes without saying",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_In this piece, I will explore",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** In this piece, I will explore a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "In this piece, I will explore",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_There are many factors to consider",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** There are many factors to consider a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "There are many factors to consider",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_Ultimately, the key is to remember",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** Ultimately, the key is to remember a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "Ultimately, the key is to remember",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    },
+    {
+      "name": "filler_In conclusion",
+      "base": "pitch",
+      "changes": {
+        "body": "1. Late bedtime\n**Why it matters:** In conclusion a steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+      },
+      "expected": {
+        "J4": {
+          "span": "In conclusion",
+          "item_number": 1,
+          "severity": "FORMAT"
+        }
+      }
+    }
+  ]
+}

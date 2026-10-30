@@ -11,9 +11,10 @@ from silently degrading agreement.
 
 ## Status
 
-Task 1 scaffold only. The entry model and generated schema are available;
-checker, judge, metrics, reporting and CLI modules are empty. The labeling page
-is a static placeholder. No dataset, predictions, baseline or measured results exist.
+Task 2 provides a body/Q&A parser and ten offline deterministic checks with a
+CLI table. The entry model and generated schema remain available. Judge,
+routing, metrics and reporting modules remain empty. The browser labeling page
+is a static placeholder; no dataset, predictions, baseline or agreement results exist.
 
 ## Results
 
@@ -21,9 +22,10 @@ Pending labeled entries and evaluated runs. No agreement claims yet.
 
 ## Architecture
 
-Planned: entries feed deterministic checks and an editorial judge; predictions
-are saved in a run folder, from which metrics and reports are computed.
-See [the specification](docs/EVAL_SPEC.md) for the planned layout.
+Implemented: an entry JSON file is validated, parsed and checked against local
+rule files. Results include pass/fail/na, severity and quoted evidence with item
+numbers. The planned judge, run folders, metrics and reports are described in
+[the specification](docs/EVAL_SPEC.md).
 
 ## Reproduce
 
@@ -52,6 +54,24 @@ triggered workflow jobs. No such operations are implemented in this scaffold.
 The empty variables in `.env.example` document future judge configuration;
 never put credentials into tracked files.
 
+## Deterministic checks
+
+From the repository root, inspect the fictional clean test entry:
+
+```bash
+uv run python -m editorial_qa_evals.cli check tests/fixtures/clean_entry.json
+```
+
+Replace the path with an entry JSON file following `data/schema/entry.schema.json`.
+The table includes C1, C2, C3, C6, C8, C9, C11, C12, J2 and J4. The clean fixture
+exits 0; any failed check exits 1; invalid input exits 2. No network, credentials
+or model calls are needed. This command checks entries; labeling remains a
+browser workflow.
+
+See [deterministic conventions](docs/DETERMINISTIC.md) for applicability,
+severity, supported formatting and heuristic limits. Unit tests include clean
+entries for each piece type and individual fault bodies with expected evidence.
+
 ## Browser labeling
 
 In repository Settings → Pages, select **GitHub Actions** as the source once.
@@ -62,7 +82,9 @@ Read [the labeling guide](docs/LABELING_GUIDE.md) for the review protocol.
 
 ## Limitations
 
-The harness is not implemented yet. Future results must account for synthetic
+The deterministic layer uses documented lexical and structural heuristics; it
+does not assess editorial meaning. The judge and agreement evaluation remain
+unimplemented. Future results must account for synthetic
 data, a single primary reviewer, judge drift, prompt sensitivity and English-only
 coverage. Regulatory review is outside scope.
 

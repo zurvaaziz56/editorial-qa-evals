@@ -1,0 +1,24 @@
+{
+  "id": "syn-0001",
+  "source": "synthetic",
+  "piece_type": "simple_pitch_list",
+  "region": "UK",
+  "task_name": "Reviewer explains 2 rest habits",
+  "brief": {
+    "tips": [
+      "Late bedtime",
+      "Irregular routine"
+    ],
+    "hook": "Rest habits",
+    "tone": "Accessible and precise",
+    "expert": {
+      "credential": "Reviewer",
+      "specialism": "Rest habits"
+    }
+  },
+  "approved_labels": [
+    "Why it matters",
+    "How to do it"
+  ],
+  "body": "1. Late bedtime\n**Why it matters:** A steady rhythm supports rest. Familiar routines help.\n**How to do it:** Set aside a quiet period. Let the evening settle.\n\n2. Irregular routine\n**Why it matters:** A regular pattern supports rest. Small changes help.\n**How to do it:** Leave room for a quiet pause. Allow time to settle."
+}

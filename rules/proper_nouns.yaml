@@ -1,0 +1,10 @@
+# Exact, case-sensitive title tokens allowed by the regional rubric vocabulary.
+proper_nouns:
+  - UK
+  - US
+  - HMRC
+  - IRS
+  - NHS
+  - Medicare
+  - Mum
+  - Mom
