@@ -10,3 +10,5 @@ START_HERE.md
 *.egg-info/
 build/
 dist/
+# Keep recipe assignments off the public labeling branch.
+faults.jsonl
