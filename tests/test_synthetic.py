@@ -158,12 +158,12 @@ def test_invalid_drafts_retry_without_public_outputs(tmp_path: Path) -> None:
         return {"choices": [{"message": {"content": '{"items": []}'}}]}
 
     out = tmp_path / "out/synthetic.jsonl"
-    with pytest.raises(GenerationError, match="three attempts"):
+    with pytest.raises(GenerationError, match="more than 10% failed"):
         generate_dataset(20, 7, out, tmp_path / "run", invalid)
-    assert len(calls) == 3
+    assert len(calls) == 20 * 5 * 4
     assert not out.exists()
     assert not out.with_name("faults.jsonl").exists()
-    assert "failed validation" in calls[1]
+    assert "Validation feedback" in calls[1]
 
 
 def test_clean_failure_is_repaired_by_retry(tmp_path: Path) -> None:
@@ -255,7 +255,9 @@ def test_http_client_is_provider_neutral_and_retries() -> None:
         sleep=delays.append,
     )
     client("system", "user", 7)
-    assert delays == [1]
+    assert delays[0] == 1
+    assert len(delays) == 2
+    assert 0 < delays[1] <= 3
     assert str(requests[0].url) == "https://generation.invalid/v1/chat/completions"
     assert requests[0].headers["Authorization"] == "Bearer test-key"
     payload = json.loads(requests[0].content)

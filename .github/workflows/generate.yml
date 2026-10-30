@@ -13,6 +13,11 @@ on:
         required: true
         default: "7"
         type: number
+      max_rpm:
+        description: Maximum generation API requests per minute
+        required: true
+        default: "20"
+        type: number
 
 permissions:
   contents: write
@@ -40,12 +45,13 @@ jobs:
         env:
           N: ${{ inputs.n }}
           SEED: ${{ inputs.seed }}
+          MAX_RPM: ${{ inputs.max_rpm }}
           JUDGE_BASE_URL: ${{ secrets.JUDGE_BASE_URL }}
           JUDGE_MODEL: ${{ secrets.JUDGE_MODEL }}
           JUDGE_API_KEY: ${{ secrets.JUDGE_API_KEY }}
         run: |
           uv run python scripts/generate_synthetic.py \
-            --n "$N" --seed "$SEED" \
+            --n "$N" --seed "$SEED" --max-rpm "$MAX_RPM" \
             --out "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" \
             --run-dir "$RUNNER_TEMP/synthetic-generation/provenance"
       - name: Publish main and orphan faults branches atomically

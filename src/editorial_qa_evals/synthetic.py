@@ -6,24 +6,23 @@ import math
 import platform
 import random
 import re
-import time
 from collections import Counter
-from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol
-from urllib.parse import urlsplit
 
-import httpx
 import typer
 import yaml
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from editorial_qa_evals.deterministic import Rules, load_rules, run_checks
+from editorial_qa_evals.draft_normalization import normalize_clean_draft
 from editorial_qa_evals.faults import RECIPES, apply_fault, available_recipes
 from editorial_qa_evals.fingerprints import entry_sha256
+from editorial_qa_evals.generation_client import GenerationClient
+from editorial_qa_evals.generation_errors import GenerationError
 from editorial_qa_evals.models import Entry
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -62,10 +61,6 @@ TOPICS = {
 }
 
 
-class GenerationError(ValueError):
-    """A generation invariant failed; no dataset should be published."""
-
-
 class DraftItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1)
@@ -80,80 +75,6 @@ class Draft(BaseModel):
 
 class Completion(Protocol):
     def __call__(self, system: str, user: str, seed: int) -> dict[str, Any]: ...
-
-
-class GenerationClient:
-    """Small provider-neutral chat client; no judge implementation is introduced."""
-
-    def __init__(
-        self,
-        base_url: str,
-        model: str,
-        api_key: str,
-        transport: httpx.BaseTransport | None = None,
-        sleep: Callable[[float], None] = time.sleep,
-    ) -> None:
-        url = urlsplit(base_url)
-        if (
-            url.scheme not in {"http", "https"}
-            or not url.hostname
-            or url.username
-            or url.password
-            or url.query
-            or url.fragment
-        ):
-            raise GenerationError(
-                "JUDGE_BASE_URL needs an HTTP(S) API root without credentials/query"
-            )
-        if not model.strip() or not api_key.strip():
-            raise GenerationError("JUDGE_MODEL and JUDGE_API_KEY must be configured")
-        self.base_url = base_url.rstrip("/")
-        self.model = model
-        self._api_key = api_key
-        self._transport = transport
-        self._sleep = sleep
-
-    def __call__(self, system: str, user: str, seed: int) -> dict[str, Any]:
-        # Sampling and fault selection use seed locally. A provider-specific seed
-        # parameter is deliberately avoided; exact replay uses retained responses.
-        with httpx.Client(transport=self._transport, timeout=90.0) as client:
-            for attempt in range(3):
-                try:
-                    response = client.post(
-                        self.base_url + "/chat/completions",
-                        headers={"Authorization": f"Bearer {self._api_key}"},
-                        json={
-                            "model": self.model,
-                            "temperature": 0,
-                            "response_format": {"type": "json_object"},
-                            "messages": [
-                                {"role": "system", "content": system},
-                                {"role": "user", "content": user},
-                            ],
-                        },
-                    )
-                except httpx.TransportError:
-                    if attempt == 2:
-                        raise GenerationError(
-                            "Generation transport failed after three attempts"
-                        ) from None
-                    self._sleep(2**attempt)
-                    continue
-                if response.status_code == 429 or response.status_code >= 500:
-                    if attempt < 2:
-                        self._sleep(2**attempt)
-                        continue
-                if response.is_error:
-                    raise GenerationError(
-                        f"Generation API returned HTTP {response.status_code}"
-                    )
-                try:
-                    return response.json()
-                except ValueError:
-                    raise GenerationError(
-                        "Generation API returned non-JSON content"
-                    ) from None
-        raise GenerationError("Generation request did not complete")
 
 
 @dataclass(frozen=True)
@@ -249,22 +170,62 @@ def render_draft(entry: Entry, draft: Draft) -> Entry:
     questions, answers, blocks = [], [], []
     for index, item in enumerate(draft.items, 1):
         if len(item.paragraphs) != _paragraph_count(entry):
-            raise GenerationError("Draft has an incorrect paragraph count")
+            raise DraftValidationError(
+                [
+                    {
+                        "check_id": "PARAGRAPH_COUNT",
+                        "item_number": index,
+                        "location": f"items.{index - 1}.paragraphs",
+                        "expected": _paragraph_count(entry),
+                        "actual": len(item.paragraphs),
+                        "evidence": item.paragraphs,
+                        "detail": "Draft has an incorrect paragraph count",
+                    }
+                ]
+            )
         for text in [item.title, item.question, *item.paragraphs]:
             if (
                 not text.strip()
                 or text != text.strip()
                 or re.search(r"[\r\n*<>\d%£$]|https?://|www\.", text)
             ):
-                raise GenerationError(
-                    "Draft contains empty text, markup, newlines, figures or URLs"
+                raise DraftValidationError(
+                    [
+                        {
+                            "check_id": "CONTENT",
+                            "item_number": index,
+                            "evidence": text,
+                            "detail": (
+                                "Draft contains empty text, markup, newlines, "
+                                "figures or URLs"
+                            ),
+                        }
+                    ]
                 )
         if not item.question.endswith("?") or item.question.count("?") != 1:
-            raise GenerationError("Each draft question must be one question")
+            raise DraftValidationError(
+                [
+                    {
+                        "check_id": "QUESTION_FORMAT",
+                        "item_number": index,
+                        "evidence": item.question,
+                        "detail": "Each draft question must be one question",
+                    }
+                ]
+            )
         for paragraph in item.paragraphs:
             if len(re.findall(r"[.!?](?:\s|$)", paragraph)) not in (2, 3):
-                raise GenerationError(
-                    "Draft paragraphs must contain two or three sentences"
+                raise DraftValidationError(
+                    [
+                        {
+                            "check_id": "J3",
+                            "item_number": index,
+                            "evidence": paragraph,
+                            "detail": (
+                                "Draft paragraphs must contain two or three sentences"
+                            ),
+                        }
+                    ]
                 )
         if entry.piece_type == "qa":
             questions.append(item.question)
@@ -299,6 +260,117 @@ def render_draft(entry: Entry, draft: Draft) -> Entry:
         )
     return entry.model_copy(
         update={"body": body, "questions": questions, "answers": answers}
+    )
+
+
+class DraftValidationError(GenerationError):
+    def __init__(self, issues: list[dict[str, Any]]) -> None:
+        self.issues = issues
+        super().__init__(issues[0]["detail"])
+
+
+class BatchGenerationError(GenerationError):
+    def __init__(self, summary: dict[str, Any]) -> None:
+        self.summary = summary
+        super().__init__(
+            f"Could not generate {summary['failed_entries']} of "
+            f"{summary['requested_entries']} entries: more than 10% failed"
+        )
+
+
+def draft_schema(paragraph_count: int) -> dict[str, Any]:
+    schema = Draft.model_json_schema()
+    paragraphs = schema["$defs"]["DraftItem"]["properties"]["paragraphs"]
+    paragraphs["minItems"] = paragraphs["maxItems"] = paragraph_count
+    return schema
+
+
+def prepare_clean_draft(
+    entry: Entry,
+    raw: dict[str, Any],
+    rules: Rules,
+) -> tuple[Entry | None, list[dict[str, Any]], list[dict[str, Any]]]:
+    """Normalize only model drafts, then run the unchanged final-output validators."""
+    changes: list[dict[str, Any]] = []
+    try:
+        content = raw["choices"][0]["message"]["content"]
+        value = json.loads(content)
+        if not isinstance(value, dict):
+            raise ValueError("Expected a draft object")
+    except (KeyError, IndexError, TypeError, ValueError):
+        return (
+            None,
+            changes,
+            [
+                {
+                    "check_id": "SCHEMA",
+                    "location": "response",
+                    "detail": (
+                        "Expected a JSON draft object in choices[0].message.content"
+                    ),
+                }
+            ],
+        )
+    normalized, changes = normalize_clean_draft(value, rules["proper_nouns"])
+    try:
+        draft = Draft.model_validate(normalized)
+    except ValidationError as error:
+        return (
+            None,
+            changes,
+            [
+                {
+                    "check_id": "SCHEMA",
+                    "location": list(issue["loc"]),
+                    "detail": issue["msg"],
+                    "evidence": issue.get("input"),
+                }
+                for issue in error.errors(include_url=False)
+            ],
+        )
+    try:
+        clean = render_draft(entry, draft)
+    except DraftValidationError as error:
+        return None, changes, error.issues
+    failures = [
+        result.model_dump()
+        for result in run_checks(clean, rules)
+        if result.result == "fail"
+    ]
+    return (None if failures else clean), changes, failures
+
+
+def resample_entry(entry: Entry, seed: int, resample: int) -> Entry:
+    """Keep ID/region/type while sampling a new fictional brief deterministically."""
+    rng = random.Random(f"{seed}:{entry.id}:resample:{resample}")
+    angle = rng.choice(list(TOPICS))
+    tips = rng.sample(TOPICS[angle], 5)
+    if tips == entry.brief.tips:
+        tips = tips[1:] + tips[:1]
+    credential = rng.choice(("Clinical wellbeing practitioner", "Psychotherapist"))
+    clinical = credential.startswith("Clinical")
+    labels = yaml.safe_load((ROOT / "rules/labels.yaml").read_text())["labels"]
+    headline_angle = "wastes of money" if angle == "waste of money" else angle
+    return entry.model_copy(
+        update={
+            "task_name": (
+                f"{credential} reveals 5 {headline_angle} in a fictional household"
+            ),
+            "brief": entry.brief.model_copy(
+                update={
+                    "tips": tips,
+                    "tone": "Clinical and precise"
+                    if clinical
+                    else "Accessible and precise",
+                    "expert": entry.brief.expert.model_copy(
+                        update={"credential": credential}
+                    ),
+                }
+            ),
+            "approved_labels": labels[angle]
+            if entry.piece_type == "simple_pitch_list"
+            else [],
+        }
     )
 
 
@@ -378,7 +450,11 @@ def inject_faults(
 
 
 def select_smoke(
-    entries: list[Entry], intended: dict[str, str], seed: int
+    entries: list[Entry],
+    intended: dict[str, str],
+    seed: int,
+    *,
+    allow_partial: bool = False,
 ) -> list[str]:
     chosen = []
     for kind in PIECE_TYPES:
@@ -392,13 +468,15 @@ def select_smoke(
                 None,
             )
             if candidate is None:
+                if allow_partial:
+                    continue
                 raise GenerationError(
                     f"Missing intended smoke stratum: {kind}/{verdict}"
                 )
             chosen.append(candidate)
     remaining = [entry.id for entry in entries if entry.id not in chosen]
     random.Random(seed).shuffle(remaining)
-    result = chosen + remaining[: 20 - len(chosen)]
+    result = chosen + remaining[: min(20, len(entries)) - len(chosen)]
     random.Random(seed).shuffle(result)
     return result
 
@@ -422,7 +500,10 @@ def generate_dataset(
     completion: Completion,
     model_name: str = "mock",
     replay_run: Path | None = None,
+    max_rpm: float = 20,
 ) -> dict[str, Any]:
+    if not math.isfinite(max_rpm) or max_rpm <= 0:
+        raise GenerationError("max-rpm must be a finite positive number")
     outputs = [out, out.parent / "faults.jsonl", out.parent / "smoke_ids.txt"]
     if out.name in {"faults.jsonl", "smoke_ids.txt"}:
         raise GenerationError("Public output uses a reserved sidecar filename")
@@ -452,6 +533,9 @@ def generate_dataset(
                 "deterministic.py",
                 "models.py",
                 "fingerprints.py",
+                "draft_normalization.py",
+                "generation_client.py",
+                "generation_errors.py",
             )
         ],
     ]
@@ -462,7 +546,10 @@ def generate_dataset(
         "n": n,
         "seed": seed,
         "model": model_name,
-        "generator_version": 1,
+        "generator_version": 2,
+        "max_rpm": max_rpm,
+        "max_attempts": 5,
+        "max_resamples": 3,
         "python_version": platform.python_version(),
     }
     if replay_run:
@@ -484,54 +571,98 @@ def generate_dataset(
     entries, fault_rows = [], []
     totals: dict[str, Counter[str]] = {}
     rng = random.Random(seed)
+    failure_counts: Counter[str] = Counter()
+    normalization_counts: Counter[str] = Counter()
+    failed_ids: list[str] = []
+    attempt_count = resample_count = 0
     for plan in plans:
         entry = plan.entry
-        payload = {
-            **entry.model_dump(exclude={"human", "injected_faults", "body"}),
-            "paragraphs_per_item": _paragraph_count(entry),
-            "forbidden_phrases": rules["phrases"],
-            "response_schema": Draft.model_json_schema(),
-        }
-        errors = ""
-        for attempt in range(3):
-            raw_path = Path("raw") / f"{entry.id}-attempt-{attempt + 1}.json"
-            user = json.dumps(payload, ensure_ascii=False) + errors
-            raw = (
-                json.loads((replay_run / raw_path).read_text())
-                if replay_run
-                else completion(prompt, user, seed)
-            )
-            _json(run_dir / raw_path, raw)
-            try:
-                content = raw["choices"][0]["message"]["content"]
-                clean = render_draft(entry, Draft.model_validate_json(content))
-                failures = _failure_ids(clean, rules)
-                if failures:
-                    raise GenerationError(
-                        "Clean draft failed checks: " + ",".join(sorted(failures))
-                    )
-            except (
-                KeyError,
-                IndexError,
-                TypeError,
-                ValidationError,
-                GenerationError,
-            ) as error:
-                # ValidationError can contain provider text; feed safe feedback only.
-                # Raw responses remain in ignored raw/ for diagnosis and replay.
-                errors = (
-                    "\nPrevious response failed validation. "
-                    "Follow all format constraints."
+        clean = None
+        last_failures: list[dict[str, Any]] = []
+        for resample in range(4):  # Original brief plus at most three replacements.
+            if resample:
+                previous = entry
+                entry = resample_entry(previous, seed, resample)
+                resample_count += 1
+                _json(
+                    run_dir / "resamples" / f"{entry.id}-{resample}.json",
+                    {
+                        "id": entry.id,
+                        "resample": resample,
+                        "previous_brief": previous.model_dump(
+                            exclude={"human", "injected_faults", "body"}
+                        ),
+                        "new_brief": entry.model_dump(
+                            exclude={"human", "injected_faults", "body"}
+                        ),
+                        "reason": last_failures,
+                    },
                 )
-                if isinstance(error, GenerationError):
-                    errors += " " + str(error)
-                if attempt == 2:
-                    raise GenerationError(
-                        f"Clean draft for {entry.id} failed validation "
-                        "after three attempts"
-                    ) from None
-                continue
-            break
+            payload = {
+                **entry.model_dump(exclude={"human", "injected_faults", "body"}),
+                "paragraphs_per_item": _paragraph_count(entry),
+                "forbidden_phrases": rules["phrases"],
+                "response_schema": draft_schema(_paragraph_count(entry)),
+            }
+            history = []
+            for attempt in range(1, 6):
+                attempt_count += 1
+                filename = f"{entry.id}-resample-{resample}-attempt-{attempt}.json"
+                raw_path = Path("raw") / filename
+                attempt_path = Path("attempts") / filename
+                feedback = (
+                    (
+                        "\nValidation feedback from previous attempts:\n"
+                        + json.dumps(history, ensure_ascii=False)
+                    )
+                    if history
+                    else ""
+                )
+                user = json.dumps(payload, ensure_ascii=False) + feedback
+                changes: list[dict[str, Any]] = []
+                try:
+                    if replay_run:
+                        recorded = json.loads((replay_run / attempt_path).read_text())
+                        if recorded["status"] == "api_failed":
+                            raise GenerationError(recorded["failures"][0]["detail"])
+                        raw = json.loads((replay_run / raw_path).read_text())
+                    else:
+                        raw = completion(prompt, user, seed)
+                    _json(run_dir / raw_path, raw)
+                    clean, changes, last_failures = prepare_clean_draft(
+                        entry, raw, rules
+                    )
+                    status = "passed" if clean is not None else "validation_failed"
+                except GenerationError as error:
+                    clean = None
+                    last_failures = [{"check_id": "API", "detail": str(error)}]
+                    status = "api_failed"
+                normalization_counts.update(change["operation"] for change in changes)
+                failure_counts.update(
+                    {failure["check_id"] for failure in last_failures}
+                )
+                _json(
+                    run_dir / attempt_path,
+                    {
+                        "id": entry.id,
+                        "resample": resample,
+                        "attempt": attempt,
+                        "status": status,
+                        "normalizations": changes,
+                        "failures": last_failures,
+                        "brief": payload,
+                        "raw_path": str(raw_path) if status != "api_failed" else None,
+                    },
+                )
+                if clean is not None:
+                    break
+                history.append({"attempt": attempt, "failures": last_failures})
+            if clean is not None:
+                break
+        if clean is None:
+            failed_ids.append(entry.id)
+            continue
+        # No normalization or repair is permitted beyond this boundary.
         mutated, names = inject_faults(clean, plan.intended_verdict, rng, rules)
         confusion = verify_faults(mutated, names, rules)
         for check, counts in confusion.items():
@@ -548,20 +679,31 @@ def generate_dataset(
                 "intended_verdict": plan.intended_verdict,
             }
         )
-    smoke = select_smoke(
-        entries, {row["id"]: row["intended_verdict"] for row in fault_rows}, seed
-    )
+    intended = {row["id"]: row["intended_verdict"] for row in fault_rows}
+    smoke = select_smoke(entries, intended, seed, allow_partial=bool(failed_ids))
     public = "".join(
         entry.model_dump_json(exclude={"injected_faults", "human"}) + "\n"
         for entry in entries
     )
     faults = "".join(json.dumps(row, ensure_ascii=False) + "\n" for row in fault_rows)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(public, encoding="utf-8")
-    (out.parent / "faults.jsonl").write_text(faults, encoding="utf-8")
-    (out.parent / "smoke_ids.txt").write_text("\n".join(smoke) + "\n")
     summary = {
+        "requested_entries": n,
         "entries": len(entries),
+        "failed_entries": len(failed_ids),
+        "failed_ids": failed_ids,
+        "attempts": attempt_count,
+        "resamples": resample_count,
+        "failure_summary": dict(sorted(failure_counts.items())),
+        "normalization_counts": dict(sorted(normalization_counts.items())),
+        "smoke_entries": len(smoke),
+        "missing_smoke_strata": [
+            f"{kind}/{verdict}"
+            for kind in PIECE_TYPES
+            for verdict in VERDICTS
+            if not any(
+                e.piece_type == kind and intended[e.id] == verdict for e in entries
+            )
+        ],
         "types": dict(Counter(entry.piece_type for entry in entries)),
         "regions": dict(Counter(entry.region for entry in entries)),
         "clean": sum(not row["recipes"] for row in fault_rows),
@@ -572,6 +714,12 @@ def generate_dataset(
         "faults_sha256": _hash(faults.encode()),
     }
     _json(run_dir / "validation.json", summary)
+    if len(failed_ids) * 10 > n:
+        raise BatchGenerationError(summary)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(public, encoding="utf-8")
+    (out.parent / "faults.jsonl").write_text(faults, encoding="utf-8")
+    (out.parent / "smoke_ids.txt").write_text("\n".join(smoke) + "\n")
     return summary
 
 
@@ -585,6 +733,7 @@ def main(
     out: Path = Path("data/golden/synthetic.jsonl"),
     run_dir: Path | None = None,
     replay_run: Path | None = None,
+    max_rpm: float = typer.Option(20, min=0.001),
 ) -> None:
     """Generate fictional entries. Run live generation only in the manual workflow."""
     import os
@@ -610,11 +759,18 @@ def main(
                 )
             model_name = os.environ["JUDGE_MODEL"]
             completion = GenerationClient(
-                os.environ["JUDGE_BASE_URL"], model_name, os.environ["JUDGE_API_KEY"]
+                os.environ["JUDGE_BASE_URL"],
+                model_name,
+                os.environ["JUDGE_API_KEY"],
+                max_rpm=max_rpm,
             )
         summary = generate_dataset(
-            n, seed, out, run_dir, completion, model_name, replay_run
+            n, seed, out, run_dir, completion, model_name, replay_run, max_rpm
         )
+    except BatchGenerationError as error:
+        typer.echo(json.dumps(error.summary, indent=2), err=True)
+        typer.echo(f"Generation failed: {error}", err=True)
+        raise typer.Exit(1) from None
     except (OSError, ValueError) as error:
         # Do not print request headers, endpoint credentials or raw model content.
         typer.echo(f"Generation failed: {error}", err=True)

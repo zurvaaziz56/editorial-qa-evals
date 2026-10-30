@@ -15,6 +15,7 @@ def test_workflow_is_manual_and_keeps_secrets_in_generation_step() -> None:
     inputs = doc["on"]["workflow_dispatch"]["inputs"]
     assert inputs["n"]["default"] == "80"
     assert inputs["seed"]["default"] == "7"
+    assert inputs["max_rpm"]["default"] == "20"
     job = doc["jobs"]["generate"]
     assert job["if"] == "github.ref == 'refs/heads/main'"
     assert "env" not in job
@@ -24,11 +25,13 @@ def test_workflow_is_manual_and_keeps_secrets_in_generation_step() -> None:
     assert set(generation["env"]) == {
         "N",
         "SEED",
+        "MAX_RPM",
         "JUDGE_BASE_URL",
         "JUDGE_MODEL",
         "JUDGE_API_KEY",
     }
     assert '--n "$N" --seed "$SEED"' in generation["run"]
+    assert '--max-rpm "$MAX_RPM"' in generation["run"]
     assert "synthetic-generation/synthetic.jsonl" in generation["run"]
     assert "--run-dir" in generation["run"]
     publisher = next(
