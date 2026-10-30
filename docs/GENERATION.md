@@ -12,7 +12,7 @@ live dataset or API call is needed for cloud validation.
    The base URL is the chat API root, normally including `/v1`; do not append
    `/chat/completions` yourself or put credentials in its query string.
 2. Open Actions → Generate synthetic entries → Run workflow. Select `main`,
-   `n=80`, `seed=7`. The workflow only runs on `main`. `n` must be at least 20
+   `n=80`, `seed=7`, `max_rpm=20`. The workflow only runs on `main`. `n` must be at least 20
    because the smoke subset always contains 20 distinct entries.
 3. Check validation totals in the job output. Required deterministic injections
    must all be detected; a missed target fails generation before publication.
@@ -20,10 +20,24 @@ live dataset or API call is needed for cloud validation.
    accidental real entities and any unsupported factual claims. Do not inspect
    the faults branch or raw clean responses during blind human labeling.
 
-If secrets are missing, generation fails before requesting a model. An API
-error, malformed draft or failed clean validation is a failed run, never a
-successful zero-entry dataset. Failed attempts retain their provenance artifact
-when available. The workflow uses its existing repository token to publish;
+If secrets are missing, generation fails before requesting a model. One bad
+entry does not stop the batch: after five attempts on its original brief, it
+gets up to three new briefs, each with five attempts. Its ID, region, piece type
+and intended class remain stable. API and validation failures are logged; later
+IDs still run after an entry exhausts recovery. The run fails when more than
+10% of requested entries remain ungenerated (exactly 10% is accepted). On failure,
+no new public dataset or fault sidecar is written and publication does not run.
+Attempt provenance and a per-check failure summary are retained even on failure.
+The summary counts failed attempts by check, independently of the count of
+entries that ultimately failed. No failed body is accepted as a clean draft.
+
+Accepted partial runs contain only validated survivors. They report requested
+and actual sizes, failed IDs, type/region counts and missing smoke strata. The
+smoke list covers available strata with up to 20 distinct survivors; it can be
+shorter if fewer than 20 survived. These losses are reported rather than
+replacing failed bodies with invalid placeholders. Invalid configuration, I/O
+errors or a broken fault-detection invariant still fail rather than publishing
+corrupt data. Failed attempts retain their provenance artifact when available. The workflow uses its existing repository token to publish;
 branch protection can prevent the push and must be handled in repository settings.
 
 ## Planning and clean-body generation
@@ -52,10 +66,27 @@ They are synthetic fixtures, not real research citations. Topic and credential
 variety is deliberately small in this first generator.
 
 All ten existing deterministic checks must pass or be inapplicable on a clean
-body. Invalid responses are retried up to three times with format feedback.
-Transport errors, rate limits and server errors receive bounded retries; TLS
-verification stays enabled. The client uses standard chat messages and JSON
-output with the configured model and temperature zero, without provider SDKs.
+body. Before this validation, only clean model drafts receive deterministic
+normalization: U+2010/U+2011 become ASCII hyphens when between word characters,
+titles become sentence-case with canonical names from `rules/proper_nouns.yaml`,
+and trailing title punctuation is removed. Each edit records its field path,
+operation, before and after in attempt provenance. Paragraph counts, content,
+question format and all final deterministic checks remain enforced. Nothing is
+normalized after fault injection, so deliberate C8/J2 faults remain observable.
+
+Each request includes a strict JSON schema with the exact required paragraph
+array length when supported. A clear structured-output capability rejection
+switches the client to plain JSON mode for subsequent requests. Invalid schemas,
+authentication errors and ordinary missing-endpoint errors do not trigger a
+silent downgrade. Both modes still use the same local validation.
+
+On failed validation, the next prompt includes the exact failed check IDs and
+evidence, or structural error location/expected/actual values. Feedback accumulates
+for at most five attempts per brief before resampling. Transport errors, 429s
+and server errors receive bounded backoff; TLS verification stays enabled.
+`--max-rpm` (default 20) sets a minimum interval between all API requests,
+including retries and schema fallback. The client uses standard chat messages
+with the configured model and temperature zero, without provider SDKs.
 No semantic judge from a later task is implemented or invoked.
 
 ## Fault recipes
@@ -108,7 +139,9 @@ folder contains:
   checkout and published only to the independent faults history.
 
 Generation provenance contains `config.json`, `prompt_hashes.json`,
-`source_hashes.json`, `validation.json` and `raw/` API responses. The workflow
+`source_hashes.json`, `validation.json`, `raw/` API responses, per-attempt
+`attempts/` records (normalizations, exact validation feedback and brief schema),
+and `resamples/` records (old/new briefs and reasons). The workflow
 uploads it as an artifact; it is never staged to `main`. Default CLI provenance
 uses `runs/generation-<timestamp>/`, whose raw folder is ignored. There are no
 fake predictions or agreement metrics for this generation-only operation.
@@ -116,7 +149,7 @@ fake predictions or agreement metrics for this generation-only operation.
 Seeded briefs and recipes are reproducible. A hosted model can still change
 outputs at temperature zero. Exact regeneration therefore uses the retained
 responses with `--replay-run` pointing to the extracted provenance directory;
-pass the original `--n` and `--seed` and a new `--out`/`--run-dir`. Replay makes
+pass the original `--n`, `--seed`, `--max-rpm` and a new `--out`/`--run-dir`. Replay makes
 no model calls and requires matching model metadata, Python version, prompt,
 rule, source-code and lockfile hashes. Public/sidecar paths cannot overlap
 provenance paths. Preserve artifacts before their repository retention expires.

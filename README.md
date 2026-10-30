@@ -78,15 +78,21 @@ entries for each piece type and individual fault bodies with expected evidence.
 After merging this task, add repository Actions secrets `JUDGE_BASE_URL`,
 `JUDGE_MODEL` and `JUDGE_API_KEY`. The base URL is a chat API root, usually ending
 in `/v1`, without credentials or query parameters. Run **Actions → Generate
-synthetic entries → Run workflow** on `main`, with `n=80` and `seed=7`.
+synthetic entries → Run workflow** on `main`, with `n=80`, `seed=7` and
+`max_rpm=20`.
 Do not call the generation API from a Codex cloud task.
 
-The job generates and validates clean bodies before injecting zero to three
-faults. The default plan has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
+The job normalizes clean draft typography/title casing, then validates before
+injecting zero to three faults. Final validation remains strict; injected faults
+are never normalized. Exact validation feedback, five attempts per brief and up
+to three brief resamples recover individual entries. A run fails only when more
+than 10% remain ungenerated; accepted partial runs report missing IDs, final size
+and smoke coverage. The default throttle is 20 requests per minute, including
+capability fallback and bounded retries for rate limits/server errors. The default plan has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
 40 entries per region and 20 clean entries. Publication atomically updates
 `data/golden/synthetic.jsonl` and `data/smoke_ids.txt` on `main`, plus the separate
 orphan `faults` branch. Public entries contain no fault assignments or human
-labels. The 20 smoke IDs cover every piece type and intended verdict class;
+labels. For a complete run, 20 smoke IDs cover every piece type and intended verdict class;
 these intended classes are recipe design targets, not human ground truth.
 
 Open the public dataset and review ten entries for realism and accidental real
