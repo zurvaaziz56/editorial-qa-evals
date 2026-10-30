@@ -11,10 +11,11 @@ from silently degrading agreement.
 
 ## Status
 
-Task 2 provides a body/Q&A parser and ten offline deterministic checks with a
-CLI table. The entry model and generated schema remain available. Judge,
-routing, metrics and reporting modules remain empty. The browser labeling page
-is a static placeholder; no dataset, predictions, baseline or agreement results exist.
+Task 3 adds seeded fictional brief sampling, model-backed clean-body generation,
+controlled fault recipes and a manual generation workflow. The parser, ten
+deterministic checks, CLI and entry schema remain available. Judge, routing,
+metrics and reporting modules remain empty; the browser labeling page is still
+a placeholder. No live dataset or agreement results were generated in cloud.
 
 ## Results
 
@@ -49,10 +50,10 @@ uv run python scripts/export_schema.py
 ```
 
 The schema test checks that the committed artifact matches the model.
-Future runtime operations needing network or secrets must have manually
-triggered workflow jobs. No such operations are implemented in this scaffold.
-The empty variables in `.env.example` document future judge configuration;
-never put credentials into tracked files.
+Runtime operations needing network or secrets run as manually triggered
+workflow jobs. Generation is available now; the judge remains unimplemented.
+The empty variables in `.env.example` document the shared generation/judge
+configuration. Never put credentials into tracked files.
 
 ## Deterministic checks
 
@@ -72,6 +73,34 @@ See [deterministic conventions](docs/DETERMINISTIC.md) for applicability,
 severity, supported formatting and heuristic limits. Unit tests include clean
 entries for each piece type and individual fault bodies with expected evidence.
 
+## Synthetic generation
+
+After merging this task, add repository Actions secrets `JUDGE_BASE_URL`,
+`JUDGE_MODEL` and `JUDGE_API_KEY`. The base URL is a chat API root, usually ending
+in `/v1`, without credentials or query parameters. Run **Actions → Generate
+synthetic entries → Run workflow** on `main`, with `n=80` and `seed=7`.
+Do not call the generation API from a Codex cloud task.
+
+The job generates and validates clean bodies before injecting zero to three
+faults. The default plan has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
+40 entries per region and 20 clean entries. Publication atomically updates
+`data/golden/synthetic.jsonl` and `data/smoke_ids.txt` on `main`, plus the separate
+orphan `faults` branch. Public entries contain no fault assignments or human
+labels. The 20 smoke IDs cover every piece type and intended verdict class;
+these intended classes are recipe design targets, not human ground truth.
+
+Open the public dataset and review ten entries for realism and accidental real
+names, brands or statistics before labeling. Keep fault assignments and raw
+generation provenance out of the labeling process. Model prose must use unnamed
+fictional experts; CPR figures are locally constructed, explicitly fictional
+simulations with reserved `.invalid` URLs.
+
+See [generation and reconciliation](docs/GENERATION.md) for recipe applicability,
+validation, exact offline replay, provenance and post-labeling reconciliation.
+The workflow requires permission to push both branches. Existing human labels
+are protected from regeneration; a protected branch or racing update makes the
+atomic publication fail without partially updating the two branches.
+
 ## Browser labeling
 
 In repository Settings → Pages, select **GitHub Actions** as the source once.
@@ -84,8 +113,10 @@ Read [the labeling guide](docs/LABELING_GUIDE.md) for the review protocol.
 
 The deterministic layer uses documented lexical and structural heuristics; it
 does not assess editorial meaning. The judge and agreement evaluation remain
-unimplemented. Future results must account for synthetic
-data, a single primary reviewer, judge drift, prompt sensitivity and English-only
+unimplemented. Generation is tested with mocked responses; a live workflow run
+and review of its output remain required. Seeded planning and mutations are
+repeatable; hosted model responses can vary, so exact reproduction uses saved
+raw responses. Future results must account for synthetic data, a single primary reviewer, judge drift, prompt sensitivity and English-only
 coverage. Regulatory review is outside scope.
 
 ## Licenses

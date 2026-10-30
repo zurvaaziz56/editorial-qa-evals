@@ -1,0 +1,14 @@
+labels:
+  mistakes:
+    - "Why it's a mistake"
+    - "What to do instead"
+  red flags:
+    - "Why it's a red flag"
+    - "When to see a doctor"
+  tips:
+    - "Why it matters"
+    - "How to do it"
+  waste of money:
+    - "Why it's not worth it"
+    - "What to buy instead"
+    - "Savings"
