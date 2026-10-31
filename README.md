@@ -79,7 +79,8 @@ After merging this task, add repository Actions secrets `JUDGE_BASE_URL`,
 `JUDGE_MODEL` and `JUDGE_API_KEY`. The base URL is a chat API root, usually ending
 in `/v1`, without credentials or query parameters. Run **Actions → Generate
 synthetic entries → Run workflow** on `main`, with `n=80`, `seed=7` and
-`max_rpm=20`.
+`max_rpm=20` and `max_tokens=2048`. Lower the output token cap if the provider
+rejects a request against its token budget; RPM alone does not control token usage.
 Do not call the generation API from a Codex cloud task.
 
 The job normalizes clean draft typography/title casing, then validates before

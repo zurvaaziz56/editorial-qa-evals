@@ -93,6 +93,7 @@ def test_strict_schema_uses_the_current_entry_paragraph_count() -> None:
             "properties"
         ]["paragraphs"]
         assert paragraphs["minItems"] == paragraphs["maxItems"] == required
+        assert payload["max_tokens"] == 2048
         assert payload["temperature"] == 0
         assert "seed" not in payload
 
@@ -270,3 +271,43 @@ def test_strict_routing_capability_error_falls_back_once() -> None:
     client("system", user_prompt(), 7)
     assert formats == ["json_schema", "json_object", "json_object"]
     assert clock.delays == [3, 3]
+
+
+@pytest.mark.parametrize("delay", [61, 120])
+def test_long_retry_after_is_not_shortened(delay: int) -> None:
+    clock = FakeClock()
+    times = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        times.append(clock())
+        if len(times) == 1:
+            return httpx.Response(429, headers={"Retry-After": str(delay)})
+        return httpx.Response(200, json={})
+
+    client_with(handler, clock)("system", user_prompt(), 7)
+    assert times == [0, delay]
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_invalid_output_token_limit(limit: Any) -> None:
+    with pytest.raises(GenerationError, match="max-tokens"):
+        GenerationClient(
+            "https://generation.invalid/v1", "model", "key", max_tokens=limit
+        )
+
+
+def test_custom_output_token_limit_is_sent() -> None:
+    payloads = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payloads.append(json.loads(request.content))
+        return httpx.Response(200, json={})
+
+    GenerationClient(
+        "https://generation.invalid/v1",
+        "model",
+        "key",
+        transport=httpx.MockTransport(handler),
+        max_tokens=1024,
+    )("system", user_prompt(), 7)
+    assert payloads[0]["max_tokens"] == 1024

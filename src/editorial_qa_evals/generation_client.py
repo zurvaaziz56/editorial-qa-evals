@@ -24,6 +24,7 @@ class GenerationClient:
         sleep: Callable[[float], None] = time.sleep,
         max_rpm: float = 20,
         clock: Callable[[], float] = time.monotonic,
+        max_tokens: int = 2048,
     ) -> None:
         url = urlsplit(base_url)
         if (
@@ -41,6 +42,13 @@ class GenerationClient:
             raise GenerationError("JUDGE_MODEL and JUDGE_API_KEY must be configured")
         if not math.isfinite(max_rpm) or max_rpm <= 0:
             raise GenerationError("max-rpm must be a finite positive number")
+        if (
+            isinstance(max_tokens, bool)
+            or not isinstance(max_tokens, int)
+            or max_tokens <= 0
+        ):
+            raise GenerationError("max-tokens must be a positive integer")
+        self.max_tokens = max_tokens
         self.base_url = base_url.rstrip("/")
         self.model = model
         self._api_key = api_key
@@ -140,7 +148,7 @@ class GenerationClient:
                 pass
             else:
                 if math.isfinite(retry_after) and retry_after >= 0:
-                    delay = max(delay, min(retry_after, 60.0))
+                    delay = max(delay, retry_after)
         return delay
 
     def __call__(self, system: str, user: str, seed: int) -> dict[str, Any]:
@@ -159,6 +167,7 @@ class GenerationClient:
                         json={
                             "model": self.model,
                             "temperature": 0,
+                            "max_tokens": self.max_tokens,
                             "response_format": response_format,
                             "messages": [
                                 {"role": "system", "content": system},

@@ -87,6 +87,11 @@ and server errors receive bounded backoff; TLS verification stays enabled.
 `--max-rpm` (default 20) sets a minimum interval between all API requests,
 including retries and schema fallback. The client uses standard chat messages
 with the configured model and temperature zero, without provider SDKs.
+`--max-tokens` (default 2048, also a workflow input) caps output tokens explicitly
+so providers do not reserve a large model-default completion budget. This does
+not cap input tokens or guarantee compliance with account token quotas. Numeric
+`Retry-After` delays are honored in full, including waits longer than 60 seconds;
+transient retries remain limited to three attempts.
 No semantic judge from a later task is implemented or invoked.
 
 ## Fault recipes
