@@ -35,8 +35,15 @@ def mocked_completion(system: str, user: str, seed: int) -> dict[str, Any]:
         {
             "title": tip,
             "question": f"What supports {tip.lower()}?",
+            "statistic": {
+                "claim": f"reviewing {tip.lower()}",
+                "relevant": True,
+                "rationale": "The survey measures the item behaviour directly",
+            }
+            if payload.get("piece_type") == "cpr"
+            else None,
             "paragraphs": [
-                "This fictional household leaves time for a pause. "
+                "This careful approach leaves room for review. "
                 "A familiar pattern supports the routine."
             ]
             * payload["paragraphs_per_item"],
@@ -58,6 +65,13 @@ def clean_entry(kind: str = "simple_pitch_list") -> Entry:
         {
             "title": tip,
             "question": f"What supports {tip.lower()}?",
+            "statistic": {
+                "claim": f"reviewing {tip.lower()}",
+                "relevant": True,
+                "rationale": "The survey measures the item behaviour directly",
+            }
+            if payload.get("piece_type") == "cpr"
+            else None,
             "paragraphs": ["A familiar rhythm supports rest. Quiet pauses help."]
             * payload["paragraphs_per_item"],
         }
@@ -80,7 +94,7 @@ def test_seeded_plan_and_strata(n: int, seed: int) -> None:
         for kind in ("qa", "cpr", "simple_pitch_list")
         for verdict in ("READY", "REVISE", "MAJOR")
     }
-    assert all(len(p.entry.brief.tips) == 5 for p in plans)
+    assert all(len(p.entry.brief.tips) in (3, 5, 7) for p in plans)
     if n == 80:
         assert Counter(p.entry.piece_type for p in plans) == {
             "simple_pitch_list": 45,
@@ -94,10 +108,11 @@ def test_rendered_clean_baseline(kind: str) -> None:
     entry = clean_entry(kind)
     assert not [result for result in run_checks(entry) if result.result == "fail"]
     if kind == "cpr":
-        assert entry.body.count("https://source.invalid/") == 5
-        assert "fictional simulation" in entry.body
+        assert entry.body.count("https://source.invalid/") == len(entry.brief.tips)
+        assert "survey by" in entry.body
+        assert "fictional" not in entry.body
     if kind == "qa":
-        assert len(entry.questions) == len(entry.answers) == 5
+        assert len(entry.questions) == len(entry.answers) == len(entry.brief.tips)
 
 
 def test_complete_mocked_generation_and_replay(tmp_path: Path) -> None:
@@ -176,7 +191,7 @@ def test_clean_failure_is_repaired_by_retry(tmp_path: Path) -> None:
         if calls == 1:
             response["choices"][0]["message"]["content"] = response["choices"][0][
                 "message"
-            ]["content"].replace("This fictional", "This—fictional")
+            ]["content"].replace("This careful", "This—careful")
         return response
 
     generate_dataset(20, 7, tmp_path / "data/synthetic.jsonl", tmp_path / "run", repair)
@@ -431,7 +446,7 @@ def test_prompt_and_label_table_match_public_contract() -> None:
     prompt = (ROOT / "prompts/synthetic/generate_body.md").read_text()
     metadata = yaml.safe_load(prompt.split("---", 2)[1])
     assert metadata["name"] == "synthetic-clean-body"
-    assert metadata["version"] == "1.0"
+    assert metadata["version"] == "2.0"
     assert len(metadata["checks"]) == 20
     labels = yaml.safe_load((ROOT / "rules/labels.yaml").read_text())["labels"]
     assert labels["mistakes"] == ["Why it's a mistake", "What to do instead"]

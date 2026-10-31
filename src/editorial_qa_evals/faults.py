@@ -39,7 +39,9 @@ RECIPES = {
     )
 }
 
-NOUN = re.compile(r"\b(?:mistakes|red flags|tips|wastes? of money)\b", re.IGNORECASE)
+NOUN = re.compile(
+    r"\b(?:mistakes|red flags|signs|tips|habits|wastes? of money)\b", re.IGNORECASE
+)
 COST = re.compile(r"\b(?:cost|penalty|savings)\b", re.IGNORECASE)
 
 
@@ -133,7 +135,9 @@ def available_recipes(entry: Entry) -> list[str]:
         and credential.lower() != "expert"
     ):
         names.append("generic_credential")
-    if re.search(r"\b(?:clinical|medical)\b", credential, re.IGNORECASE):
+    if entry.brief.voice_tier == "clinical" or re.search(
+        r"\b(?:clinical|medical)\b", credential, re.IGNORECASE
+    ):
         names.append("clinical_colloquialism")
     if entry.piece_type == "simple_pitch_list":
         names.extend(["orphan_closers", "intro_lines", "mini_labels"])

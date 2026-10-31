@@ -49,3 +49,19 @@ def test_workflow_is_manual_and_keeps_secrets_in_generation_step() -> None:
     )
     assert artifact["with"]["path"].endswith("/provenance")
     assert doc["permissions"]["contents"] == "write"
+
+
+def test_diversity_report_reaches_job_summary_before_publication() -> None:
+    doc = yaml.load(
+        (ROOT / ".github/workflows/generate.yml").read_text(), Loader=yaml.BaseLoader
+    )
+    steps = doc["jobs"]["generate"]["steps"]
+    report = next(
+        step for step in steps if step.get("name") == "Report public dataset diversity"
+    )
+    assert "scripts/diversity_report.py" in report["run"]
+    assert '>> "$GITHUB_STEP_SUMMARY"' in report["run"]
+    assert "|" not in report["run"]  # Keep the reporter's failure exit status.
+    assert steps.index(report) < next(
+        i for i, s in enumerate(steps) if s.get("name", "").startswith("Publish")
+    )

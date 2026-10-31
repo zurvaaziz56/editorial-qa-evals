@@ -9,7 +9,7 @@ from editorial_qa_evals.draft_normalization import normalize_clean_draft
 
 
 def draft(
-    title: str, paragraph: str = "A fictional routine helps. Quiet pauses matter."
+    title: str, paragraph: str = "A regular routine helps. Quiet pauses matter."
 ) -> dict[str, Any]:
     return {
         "items": [

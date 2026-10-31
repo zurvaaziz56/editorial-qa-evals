@@ -61,6 +61,12 @@ jobs:
             --n "$N" --seed "$SEED" --max-rpm "$MAX_RPM" --max-tokens "$MAX_TOKENS" \
             --out "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" \
             --run-dir "$RUNNER_TEMP/synthetic-generation/provenance"
+      - name: Report public dataset diversity
+        run: |
+          uv run python scripts/diversity_report.py \
+            "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" > "$RUNNER_TEMP/diversity-report.md"
+          cat "$RUNNER_TEMP/diversity-report.md"
+          cat "$RUNNER_TEMP/diversity-report.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Publish main and orphan faults branches atomically
         run: bash scripts/publish_synthetic.sh "$RUNNER_TEMP/synthetic-generation"
       - name: Retain generation provenance

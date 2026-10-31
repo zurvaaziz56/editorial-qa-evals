@@ -7,9 +7,62 @@
           "items": {
             "type": "string"
           },
-          "maxItems": 5,
+          "maxItems": 7,
           "title": "Tips",
           "type": "array"
+        },
+        "domain": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Domain"
+        },
+        "noun_category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Noun Category"
+        },
+        "headline_template": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headline Template"
+        },
+        "voice_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "clinical",
+                "accessible_precise",
+                "lifestyle"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Voice Tier"
         },
         "hook": {
           "title": "Hook",

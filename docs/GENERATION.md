@@ -1,6 +1,7 @@
 # Synthetic generation and fault reconciliation
 
-This is Task 3 only. Generation produces fictional entries and recipe metadata;
+This covers Task 3 and the Task 3b representative-brief update. Generation produces
+fictional entries and recipe metadata;
 it does not produce human labels, judge predictions, agreement metrics or a
 labeling UI. Existing tests use mocked completions and temporary outputs. No
 live dataset or API call is needed for cloud validation.
@@ -12,17 +13,21 @@ live dataset or API call is needed for cloud validation.
    The base URL is the chat API root, normally including `/v1`; do not append
    `/chat/completions` yourself or put credentials in its query string.
 2. Open Actions → Generate synthetic entries → Run workflow. Select `main`,
-   `n=80`, `seed=7`, `max_rpm=20`. The workflow only runs on `main`. `n` must be at least 20
+   `n=80`, `seed=7`, `max_rpm=20`, `max_tokens=2048`. The workflow only runs on `main`.
+`n` must be at least 20
    because the smoke subset always contains 20 distinct entries.
 3. Check validation totals in the job output. Required deterministic injections
    must all be detected; a missed target fails generation before publication.
-4. Review the public JSONL after success. Read ten sample bodies for realism,
+4. Read the job summary's domain, credential, headline-template and count
+   distributions and top-25 content words. The report reads only public entries;
+   it exposes no fault assignments and blocks publication when a cap fails.
+5. Review the public JSONL after success. Read ten sample bodies for realism,
    accidental real entities and any unsupported factual claims. Do not inspect
    the faults branch or raw clean responses during blind human labeling.
 
 If secrets are missing, generation fails before requesting a model. One bad
 entry does not stop the batch: after five attempts on its original brief, it
-gets up to three new briefs, each with five attempts. Its ID, region, piece type
+gets up to three reordered/re-hooked briefs, each with five attempts. Its ID, region, piece type
 and intended class remain stable. API and validation failures are logged; later
 IDs still run after an entry exhausts recovery. The run fails when more than
 10% of requested entries remain ungenerated (exactly 10% is accepted). On failure,
@@ -37,7 +42,8 @@ smoke list covers available strata with up to 20 distinct survivors; it can be
 shorter if fewer than 20 survived. These losses are reported rather than
 replacing failed bodies with invalid placeholders. Invalid configuration, I/O
 errors or a broken fault-detection invariant still fail rather than publishing
-corrupt data. Failed attempts retain their provenance artifact when available. The workflow uses its existing repository token to publish;
+corrupt data. Failed attempts retain their provenance artifact when available. The
+workflow uses its existing repository token to publish;
 branch protection can prevent the push and must be handled in repository settings.
 
 ## Planning and clean-body generation
@@ -49,21 +55,65 @@ rounded to the nearest integer. Each piece type reserves clean, revise and major
 examples, so the smoke subset can cover all nine type/intended-class cells.
 The final smoke ID order is shuffled and carries no class labels.
 
-Each entry has five sampled, fictional brief tips, a role credential, a
-specialism, a hook and a tone. Experts are unnamed fictional composites.
-Approved labels come from `rules/labels.yaml`, only for simple pitch lists.
-The prompt is versioned in `prompts/synthetic/generate_body.md`. The model
-returns structured titles, questions and prose paragraphs; numbering, labels,
-CPR attribution, standfirst, fictional statistics and source URLs are rendered
-locally. Each prose paragraph must contain two or three sentences.
+Briefs come from `rules/brief_catalog.yaml`, not a hard-coded household scenario.
+Its twelve domains cover personal finance, mortgages/property, travel, home/garden,
+sleep/health, dental, pets, careers, parenting, cybersecurity/scams, motoring and
+food/nutrition. Each has three specific credentials, a voice tier per credential,
+three hooks and twelve concrete candidates per noun category. The six categories
+are mistakes, red flags, signs, tips, wastes of money and habits. Eight headline
+templates retain the specific credential; generic credentials occur only through
+the C10 recipe. Experts remain unnamed synthetic composites, never real people.
 
-Model text cannot introduce digits, URLs, price symbols, markup or newlines.
-The prompt prohibits real identities, brands, research and factual claims.
-These constraints reduce risk but do not prove semantic quality; human review
-remains required. CPR statistics explicitly describe invented-room simulations,
-use reserved `source.invalid` URLs, and have a fictional tier/region/year marker.
-They are synthetic fixtures, not real research citations. Topic and credential
-variety is deliberately small in this first generator.
+Each entry independently draws 3, 5 or 7 tips with weights .25/.5/.25; these are
+sampling probabilities, not exact per-batch quotas. The schema supports seven
+tips and remains compatible with earlier entries. Headlines and response schemas
+use the actual count. Public optional brief fields `domain`, `noun_category`,
+`headline_template` and `voice_tier` describe the brief, not its injected faults.
+Approved labels come only from `rules/labels.yaml`. Nonmedical red flags use
+"What to check next"; clinical red flags use "When to seek professional advice".
+
+The seeded planner balances domains, credentials within domains and templates,
+consuming every selected tip from its pool once. Actual public survivors must
+satisfy domain <=15%, credential <=10%, template <=25%, and no exact brief tip
+reuse across entries (case-insensitive). These are hard limits, not rounded
+shares; invalid survivors are not published. With 864 candidates, the catalog is
+finite: an infeasible request fails before API calls and asks for fewer entries
+or more unique candidates. It never silently reuses a tip to fill a quota.
+Recovery retains domain, credential, template, category, count and ownership of
+its tips; it changes the tip order and hook, preserving all diversity guarantees.
+
+Clinical voice is restricted to sleep/health, dental and pet-health topics.
+The body prompt receives the explicit voice tier and requires proportionate
+clinical statements; routine inconvenience must not be medicalised. Accessible
+precise and lifestyle credentials use their corresponding registers. These
+semantic requirements still need human review; deterministic validation cannot
+establish medical accuracy or writing quality.
+
+The prompt is versioned in `prompts/synthetic/generate_body.md` (v2.0). The model
+returns structured titles, questions, prose and CPR statistic self-checks.
+Numbering, labels, attribution, standfirst and source metadata are rendered
+locally. Each prose paragraph contains two or three sentences. No draft text
+may contain the words "fictional", "invented" or "simulation"; fictionality is
+recorded here and in provenance, with made-up organisations and statistics in
+the drafts. No actual surveys, sourced evidence or agreement results are claimed.
+
+For each CPR item the model proposes a short, non-numeric survey-behaviour claim,
+a relevance decision and a rationale connecting it to that item's tip AND prose.
+The prompt requires a per-entry review of every claim, rejecting same-topic but
+unrelated statistics, medical efficacy claims and vague "used this approach"
+wording. A failed relevance decision drops that statistic; a missing CPR
+self-check or malformed accepted claim triggers validation feedback. Retained
+raw responses contain the rationale; human reviewers must still judge whether
+accepted claims really support the prose. `validation.json` reports rendered
+and dropped statistics on accepted clean entries, before deliberate faults.
+
+The renderer supplies a stable seeded percentage, sample size (600–2000),
+matching UK/US region, year 2026, the domain's made-up survey organisation, tier 3
+and a `https://source.invalid/survey/...` URL. The year is a fixed fixture version,
+not the current clock, so exact replay is stable. Refresh it when fixtures age
+beyond the rubric's three-year window. Numbers, URLs, source names and dates
+cannot be supplied through prose paragraphs or accepted survey claims. Never
+use these synthetic figures as real research citations.
 
 All ten existing deterministic checks must pass or be inapplicable on a clean
 body. Before this validation, only clean model drafts receive deterministic
@@ -115,8 +165,10 @@ No semantic judge from a later task is implemented or invoked.
 
 Approximately 25% receive no faults. Others receive one to three compatible
 recipes, with duplicate or canceling structural operations excluded. Count plus,
-count minus and dropped tip are mutually exclusive. Dropping a tip or removing an item is incompatible with bundled Q5, so its
-overloaded question cannot disappear in a later mutation. Dropped tip replaces a body item with another item's content,
+count minus and dropped tip are mutually exclusive. Dropping a tip or removing an item
+is incompatible with bundled Q5, so its
+overloaded question cannot disappear in a later mutation. Dropped tip replaces a body
+item with another item's content,
 keeping the count but leaving a distinct brief tip uncovered. Q&A recipes keep
 body text and question/answer arrays synchronized; Q1 is retained.
 
@@ -156,7 +208,9 @@ outputs at temperature zero. Exact regeneration therefore uses the retained
 responses with `--replay-run` pointing to the extracted provenance directory;
 pass the original `--n`, `--seed`, `--max-rpm` and a new `--out`/`--run-dir`. Replay makes
 no model calls and requires matching model metadata, Python version, prompt,
-rule, source-code and lockfile hashes. Public/sidecar paths cannot overlap
+rule (including the catalog), source-code and lockfile hashes. Older prompt-v1
+artifacts require the original code and rules; v2 intentionally does not replay
+those inputs as if they were generated under the new catalog. Public/sidecar paths cannot overlap
 provenance paths. Preserve artifacts before their repository retention expires.
 
 ## Publication and reconciliation
@@ -178,3 +232,21 @@ to overwrite either source, an existing destination or an already reconciled
 entry. Recipe names and intended verdicts remain separate. Obtaining fault
 metadata is intentionally deferred until labeling is complete; do not expose it
 to the future browser labeling page.
+
+## Offline diversity report
+
+`uv run python scripts/diversity_report.py data/golden/synthetic.jsonl` prints
+Markdown distributions and a deterministic top-25 content-word frequency list.
+The CLI reads no hidden sidecars or raw responses and returns nonzero for invalid
+JSONL, empty data, missing planning metadata, exceeded caps or duplicate brief
+tips. Legacy datasets lacking planning metadata must be regenerated to pass this
+report. The Actions generation job prints the same report to its log and job
+summary before atomic publication; no local terminal or API calls are needed.
+The count distribution uses brief counts, so deliberate count faults do not
+misrepresent planning. Word frequencies include final public prose (including
+injected faults) while excluding stop words, URLs and survey attribution names.
+
+Prompt v2 has no judge/agreement baseline to refresh: no evaluated run or
+`data/baseline.json` exists yet. This changes synthetic generation only. Preserve
+the current trial data until a new manual workflow is deliberately run, and
+review sample bodies again before creating a final human labeling set.

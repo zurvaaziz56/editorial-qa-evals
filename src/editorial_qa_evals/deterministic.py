@@ -327,7 +327,7 @@ NUMBER_WORDS = dict(
 )
 COUNT_NOUN = (
     r"(?:signs?|tips?|mistakes?|red flags?|habits?|ways?|steps?|"
-    r"reasons?|items?|questions?)"
+    r"reasons?|items?|questions?|wastes? of money)"
 )
 COUNT = re.compile(
     r"\b(\d+|" + "|".join(NUMBER_WORDS) + r")\s+"
