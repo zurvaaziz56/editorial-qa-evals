@@ -19,6 +19,12 @@ on:
         default: "20"
         type: number
 
+      max_tokens:
+        description: Maximum output tokens per generation request
+        required: true
+        default: "2048"
+        type: number
+
 permissions:
   contents: write
 
@@ -45,13 +51,14 @@ jobs:
         env:
           N: ${{ inputs.n }}
           SEED: ${{ inputs.seed }}
+          MAX_TOKENS: ${{ inputs.max_tokens }}
           MAX_RPM: ${{ inputs.max_rpm }}
           JUDGE_BASE_URL: ${{ secrets.JUDGE_BASE_URL }}
           JUDGE_MODEL: ${{ secrets.JUDGE_MODEL }}
           JUDGE_API_KEY: ${{ secrets.JUDGE_API_KEY }}
         run: |
           uv run python scripts/generate_synthetic.py \
-            --n "$N" --seed "$SEED" --max-rpm "$MAX_RPM" \
+            --n "$N" --seed "$SEED" --max-rpm "$MAX_RPM" --max-tokens "$MAX_TOKENS" \
             --out "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" \
             --run-dir "$RUNNER_TEMP/synthetic-generation/provenance"
       - name: Publish main and orphan faults branches atomically

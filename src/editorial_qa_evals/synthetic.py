@@ -548,6 +548,7 @@ def generate_dataset(
         "model": model_name,
         "generator_version": 2,
         "max_rpm": max_rpm,
+        "max_tokens": getattr(completion, "max_tokens", None),
         "max_attempts": 5,
         "max_resamples": 3,
         "python_version": platform.python_version(),
@@ -734,6 +735,7 @@ def main(
     run_dir: Path | None = None,
     replay_run: Path | None = None,
     max_rpm: float = typer.Option(20, min=0.001),
+    max_tokens: int = typer.Option(2048, min=1),
 ) -> None:
     """Generate fictional entries. Run live generation only in the manual workflow."""
     import os
@@ -763,6 +765,7 @@ def main(
                 model_name,
                 os.environ["JUDGE_API_KEY"],
                 max_rpm=max_rpm,
+                max_tokens=max_tokens,
             )
         summary = generate_dataset(
             n, seed, out, run_dir, completion, model_name, replay_run, max_rpm
