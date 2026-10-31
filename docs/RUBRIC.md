@@ -19,7 +19,7 @@ Terminology used throughout this repo (never use real names in this repo):
 One **entry** at body stage:
 
 - `task_name` — the headline / editorial promise (e.g. "Psychotherapist reveals 5 signs …")
-- `brief` — up to 5 tips, a hook, a tone, and the expert's credential + specialism
+- `brief` — up to 7 tips, a hook, a tone, and the expert's credential + specialism
 - `region` — `UK` or `US`
 - `piece_type` — `simple_pitch_list` | `cpr` (curated press release) | `qa`
 - `approved_labels` — the sub-heading labels fixed on the labels sheet (e.g. `["Why it's a mistake", "What to do instead"]`), may be empty for CPR/Q&A

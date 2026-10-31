@@ -4,7 +4,7 @@ labels:
     - "What to do instead"
   red flags:
     - "Why it's a red flag"
-    - "When to see a doctor"
+    - "What to check next"
   tips:
     - "Why it matters"
     - "How to do it"
@@ -12,3 +12,16 @@ labels:
     - "Why it's not worth it"
     - "What to buy instead"
     - "Savings"
+  signs:
+    - "What to notice"
+    - "What to do next"
+  habits:
+    - "Why it matters"
+    - "How to approach it"
+  wastes of money:
+    - "Why it's not worth it"
+    - "What to buy instead"
+    - "Savings"
+  clinical red flags:
+    - "Why it's a red flag"
+    - "When to seek professional advice"

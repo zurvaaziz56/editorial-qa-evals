@@ -11,7 +11,8 @@ from silently degrading agreement.
 
 ## Status
 
-Task 3 adds seeded fictional brief sampling, model-backed clean-body generation,
+Task 3b adds catalog-driven, diverse brief sampling and representative CPR
+statistics to model-backed clean-body generation,
 controlled fault recipes and a manual generation workflow. The parser, ten
 deterministic checks, CLI and entry schema remain available. Judge, routing,
 metrics and reporting modules remain empty; the browser labeling page is still
@@ -89,7 +90,8 @@ are never normalized. Exact validation feedback, five attempts per brief and up
 to three brief resamples recover individual entries. A run fails only when more
 than 10% remain ungenerated; accepted partial runs report missing IDs, final size
 and smoke coverage. The default throttle is 20 requests per minute, including
-capability fallback and bounded retries for rate limits/server errors. The default plan has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
+capability fallback and bounded retries for rate limits/server errors. The default plan
+has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
 40 entries per region and 20 clean entries. Publication atomically updates
 `data/golden/synthetic.jsonl` and `data/smoke_ids.txt` on `main`, plus the separate
 orphan `faults` branch. Public entries contain no fault assignments or human
@@ -98,9 +100,32 @@ these intended classes are recipe design targets, not human ground truth.
 
 Open the public dataset and review ten entries for realism and accidental real
 names, brands or statistics before labeling. Keep fault assignments and raw
-generation provenance out of the labeling process. Model prose must use unnamed
-fictional experts; CPR figures are locally constructed, explicitly fictional
-simulations with reserved `.invalid` URLs.
+generation provenance out of the labeling process. Model prose uses unnamed synthetic
+experts. The catalog covers twelve domains,
+36 credentials with voice tiers, six noun categories and eight headline templates.
+Counts are sampled from 3/5/7 with weights .25/.5/.25. Actual outputs enforce
+maximum shares of 15% per domain, 10% per credential and 25% per template, with
+no exact brief tip reused across entries. Finite catalog capacity is checked
+before model calls. The job summary reports these distributions and the top-25
+content words before publication.
+
+CPR figures use made-up organisations, seeded synthetic survey figures, sample
+sizes, matching regions, a fixed 2026 fixture year and reserved `.invalid` URLs.
+The model self-checks per-item relevance and rejected statistics are dropped.
+These are synthetic data, never real research; human review must assess whether
+retained claims support their items. Clinical voice is limited to relevant
+health, sleep, dental and pet-health topics, with proportionate claims.
+
+The public dataset report can also run offline in cloud or CI:
+
+```bash
+uv run python scripts/diversity_report.py data/golden/synthetic.jsonl
+```
+
+Earlier trial datasets without catalog metadata must be regenerated to pass the
+new diversity report. Run the manual workflow after merge, then review ten
+entries again before labeling. Prompt v2 changes future generation; it does not
+rewrite the current trial dataset.
 
 See [generation and reconciliation](docs/GENERATION.md) for recipe applicability,
 validation, exact offline replay, provenance and post-labeling reconciliation.
@@ -120,10 +145,11 @@ Read [the labeling guide](docs/LABELING_GUIDE.md) for the review protocol.
 
 The deterministic layer uses documented lexical and structural heuristics; it
 does not assess editorial meaning. The judge and agreement evaluation remain
-unimplemented. Generation is tested with mocked responses; a live workflow run
+unimplemented. The Task 3b generator is tested with mocked responses; a new live workflow run
 and review of its output remain required. Seeded planning and mutations are
 repeatable; hosted model responses can vary, so exact reproduction uses saved
-raw responses. Future results must account for synthetic data, a single primary reviewer, judge drift, prompt sensitivity and English-only
+raw responses. Future results must account for synthetic data, a single primary
+reviewer, judge drift, prompt sensitivity and English-only
 coverage. Regulatory review is outside scope.
 
 ## Licenses

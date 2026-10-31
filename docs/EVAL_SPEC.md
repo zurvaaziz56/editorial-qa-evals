@@ -108,6 +108,16 @@ Hypothesis to test and report: rule-derived routing beats holistic routing on `e
 ### 3.2 Synthetic generation (`scripts/generate_synthetic.py`)
 
 - Fictional experts, publications, brands and figures only. Seeded for reproducibility.
+- Task 3b uses `rules/brief_catalog.yaml`: twelve domains, at least three credentials
+  per domain with explicit voice tiers, six noun categories, concrete tip pools and
+  multiple hooks. Counts are sampled from 3/5/7 with weights .25/.5/.25. Optional
+  brief metadata (`domain`, `noun_category`, `headline_template`, `voice_tier`) records
+  planning choices without exposing fault assignments. Legacy entries remain valid.
+- Complete and accepted partial datasets enforce domain <=15%, credential <=10%,
+  template <=25%, and globally unique brief tips. Reject exhausted catalog capacity
+  before model calls. CPR statistics use made-up organisations, local synthetic
+  figures and .invalid URLs; the body model self-checks per-item relevance and
+  rejected claims are omitted. No real survey or clinical evidence is implied.
 - Generate a clean body from a fictional brief, then apply a controlled fault recipe
   drawn from the rubric: count breach (+1/−1 item), noun drift (mistakes→tips), orphan closers,
   intro framing lines, mini-labels, placeholders in cost sub-sections, em-dashes, region swaps,

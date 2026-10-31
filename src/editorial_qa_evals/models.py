@@ -22,7 +22,11 @@ class Expert(SchemaModel):
 
 
 class Brief(SchemaModel):
-    tips: list[str] = Field(max_length=5)
+    tips: list[str] = Field(max_length=7)
+    domain: str | None = None
+    noun_category: str | None = None
+    headline_template: str | None = None
+    voice_tier: Literal["clinical", "accessible_precise", "lifestyle"] | None = None
     hook: str
     tone: str
     expert: Expert

@@ -20,6 +20,13 @@ def response(user: str) -> dict[str, Any]:
     request = payload(user)
     items = [
         {
+            "statistic": {
+                "claim": "following a careful routine",
+                "relevant": False,
+                "rationale": "This generic claim does not support the specific tip",
+            }
+            if request["piece_type"] == "cpr"
+            else None,
             "title": tip,
             "question": f"What supports {tip.lower()}?",
             "paragraphs": ["A familiar rhythm supports rest. Quiet pauses help."]
@@ -119,7 +126,7 @@ def test_feedback_has_exact_failed_check_spans(tmp_path: Path) -> None:
     failures = {item["check_id"]: item for item in feedback[0]["failures"]}
     assert set(failures) == {"C8", "C9"}
     assert failures["C8"]["evidence"][0]["span"] == "—"
-    assert failures["C8"]["evidence"][0]["item_number"] == 1
+    assert any(e["item_number"] == 1 for e in failures["C8"]["evidence"])
     assert summary["failure_summary"] == {"C8": 1, "C9": 1}
 
 

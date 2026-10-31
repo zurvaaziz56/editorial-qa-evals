@@ -1,0 +1,1160 @@
+# Synthetic editorial brief catalog. Organisations below are made up.
+version: 1
+count_values:
+- 3
+- 5
+- 7
+count_weights:
+- 0.25
+- 0.5
+- 0.25
+headline_templates:
+  reveals: '{credential} reveals {count} {category} in {subject}'
+  warns: '{credential} warns of {count} {category} in {subject}'
+  according: '{count} {category} in {subject}, according to {article} {credential_lower}'
+  explains: '{credential} explains {count} {category} that matter for {subject}'
+  shares: '{credential} shares {count} {category} linked to {subject}'
+  guide: '{article_cap} {credential_lower}''s guide to {count} {category} in {subject}'
+  look: '{count} {category} in {subject}: {article} {credential_lower} takes a closer look'
+  highlights: '{credential} highlights {count} {category} worth reviewing in {subject}'
+domains:
+  personal_finance:
+    name: Personal finance
+    subject: household budgets
+    clinical_topics: false
+    stat_organisation: Qelvori Budget Observatory
+    credentials:
+    - name: Chartered accountant
+      voice_tier: accessible_precise
+    - name: Debt counsellor
+      voice_tier: accessible_precise
+    - name: Financial planner
+      voice_tier: accessible_precise
+    hooks:
+    - Making a monthly budget last
+    - Preparing for an unexpected bill
+    - Keeping recurring costs visible
+    tips:
+      mistakes:
+      - Overlooked annual bills
+      - Minimum-only repayments
+      - Unchecked renewal prices
+      - Forgotten subscription trials
+      - Unplanned overdraft use
+      - Missing emergency reserves
+      - Duplicate insurance cover
+      - Unrecorded cash spending
+      - Delayed bill opening
+      - Unused account fees
+      - Irregular budget reviews
+      - Credit-funded groceries
+      red flags:
+      - Unexplained account fees
+      - Repeated payment reversals
+      - Shrinking emergency reserves
+      - Rising minimum repayments
+      - Frequent overdraft charges
+      - Unfamiliar direct debits
+      - Unopened arrears letters
+      - Persistent budget shortfalls
+      - Missing billing statements
+      - Sudden borrowing requests
+      - Conflicting repayment totals
+      - Unclear cancellation terms
+      signs:
+      - Earlier payday borrowing
+      - Repeated savings withdrawals
+      - Increasing bill reminders
+      - Growing credit balances
+      - Skipped essential repairs
+      - Delayed rent payments
+      - Falling account balances
+      - Rising interest charges
+      - Regular unpaid invoices
+      - Longer repayment periods
+      - Reduced food budgets
+      - Unused budget categories
+      tips:
+      - Annual bill calendars
+      - Separate spending pots
+      - Weekly balance reviews
+      - Renewal price comparisons
+      - Small emergency buffers
+      - Automatic savings transfers
+      - Receipt reconciliation
+      - Debt payment priorities
+      - Subscription reminders
+      - Bill due-date alignment
+      - Fee-free account reviews
+      - Shared spending limits
+      wastes of money:
+      - Unused premium accounts
+      - Duplicate budgeting notebooks
+      - Unread investment newsletters
+      - Paid balance alerts
+      - Unused cashback memberships
+      - Unclaimed rewards subscriptions
+      - Redundant card protection
+      - Repeated late fees
+      - Unneeded statement copies
+      - Inactive savings clubs
+      - Paid cheque wallets
+      - Unused concierge benefits
+      habits:
+      - Regular receipt sorting
+      - Monthly bill reconciliation
+      - Prompt statement opening
+      - Payday savings transfers
+      - Weekly expense logging
+      - Planned cash withdrawals
+      - Renewal diary updates
+      - Shared budget conversations
+      - Routine fee comparisons
+      - Small debt overpayments
+      - Quarterly subscription audits
+      - Emergency fund top-ups
+  mortgages_property:
+    name: Mortgages and property
+    subject: property viewings and mortgage deals
+    clinical_topics: false
+    stat_organisation: Veznori Housing Observatory
+    credentials:
+    - name: Mortgage adviser
+      voice_tier: accessible_precise
+    - name: Residential surveyor
+      voice_tier: accessible_precise
+    - name: Property solicitor
+      voice_tier: accessible_precise
+    hooks:
+    - Preparing for a property viewing
+    - Understanding a fixed-rate deal
+    - Planning the costs of moving
+    tips:
+      mistakes:
+      - Ignored arrangement fees
+      - Unread lease terms
+      - Missing survey contingency
+      - Rushed affordability estimates
+      - Forgotten moving costs
+      - Unchecked service charges
+      - Skipped damp inspections
+      - Late document gathering
+      - Unmeasured furniture access
+      - Overlooked exit penalties
+      - Verbal repair agreements
+      - Incomplete title enquiries
+      red flags:
+      - Unexplained service-charge rises
+      - Recurring ceiling stains
+      - Inconsistent floor plans
+      - Missing survey records
+      - High early-exit charges
+      - Unclear rate-reset terms
+      - Unanswered lease questions
+      - Pressure for immediate deposits
+      - Unverified boundary claims
+      - Fresh paint over damp
+      - Unspecified repair responsibilities
+      - Conflicting property measurements
+      signs:
+      - Condensation behind wardrobes
+      - Uneven door clearances
+      - Water marks below windows
+      - Cracks around extensions
+      - Slow drainage at viewings
+      - Stale smells in cupboards
+      - Rising monthly housing costs
+      - Repeated roof repairs
+      - Falling water pressure
+      - Loose window seals
+      - Increasing communal charges
+      - Missing maintenance records
+      tips:
+      - Total deal-cost comparisons
+      - Written viewing checklists
+      - Independent survey appointments
+      - Deposit document folders
+      - Moving-cost reserves
+      - Lease-length reviews
+      - Boundary plan comparisons
+      - Repair estimate requests
+      - Rate-expiry reminders
+      - Service-charge histories
+      - Repeat neighbourhood visits
+      - Completion-day checklists
+      wastes of money:
+      - Duplicate valuation bookings
+      - Unused moving insurance extras
+      - Unnecessary storage months
+      - Unread property alerts
+      - Premium brochure packages
+      - Redundant key-cutting bundles
+      - Rushed conveyancing add-ons
+      - Unused packing kits
+      - Decorative viewing upgrades
+      - Early furniture deposits
+      - Duplicate address-change services
+      - Paid mortgage reminder packs
+      habits:
+      - Monthly mortgage reviews
+      - Routine gutter inspections
+      - Annual service-charge checks
+      - Written repair logs
+      - Regular seal inspections
+      - Saved property paperwork
+      - Seasonal damp checks
+      - Updated moving budgets
+      - Scheduled rate comparisons
+      - Prompt leak reporting
+      - Regular boundary maintenance
+      - Written viewing notes
+  travel:
+    name: Travel
+    subject: travel planning
+    clinical_topics: false
+    stat_organisation: Zunavri Travel Observatory
+    credentials:
+    - name: Travel planner
+      voice_tier: lifestyle
+    - name: Tour coordinator
+      voice_tier: lifestyle
+    - name: Baggage specialist
+      voice_tier: accessible_precise
+    hooks:
+    - Packing for a short break
+    - Keeping departure day calm
+    - Comparing the full cost of a trip
+    tips:
+      mistakes:
+      - Unchecked passport validity
+      - Overfilled cabin bags
+      - Missing transfer buffers
+      - Unread baggage rules
+      - Forgotten booking references
+      - Duplicate accommodation bookings
+      - Unchecked arrival airports
+      - Late insurance purchases
+      - Unplanned roaming charges
+      - Missing dietary requests
+      - Unchecked station changes
+      - Overpacked daily itineraries
+      red flags:
+      - Unclear cancellation windows
+      - Hidden transfer charges
+      - Missing accommodation addresses
+      - Pressure to pay privately
+      - Conflicting check-in times
+      - Unspecified baggage allowances
+      - Unverifiable booking confirmations
+      - Vague refund promises
+      - Unexplained resort fees
+      - Unclear accessibility details
+      - Unlisted connection airports
+      - Missing operator contacts
+      signs:
+      - Repeated itinerary changes
+      - Increasing package add-ons
+      - Long transfer connections
+      - Conflicting luggage dimensions
+      - Unanswered booking questions
+      - Shrinking connection windows
+      - Distant arrival terminals
+      - Repeated schedule notices
+      - Unlisted local taxes
+      - Unclear meal inclusions
+      - Missing seat allocations
+      - Crowded arrival schedules
+      tips:
+      - Layered packing lists
+      - Offline booking copies
+      - Connection buffer planning
+      - Baggage size measurements
+      - Local transport comparisons
+      - Flexible itinerary gaps
+      - Predeparture document checks
+      - Shared emergency contacts
+      - Accessible route research
+      - Full fare comparisons
+      - Arrival transfer plans
+      - Refillable toiletry bottles
+      wastes of money:
+      - Unused lounge passes
+      - Oversized toiletry sets
+      - Duplicate travel adapters
+      - Unneeded priority boarding
+      - Unused attraction bundles
+      - Premium luggage straps
+      - Unread destination subscriptions
+      - Excess currency exchanges
+      - Unused seat upgrades
+      - Redundant packing cubes
+      - Single-trip neck gadgets
+      - Unused hotel meal plans
+      habits:
+      - Early document reviews
+      - Regular fare comparisons
+      - Light packing rehearsals
+      - Saved emergency numbers
+      - Shared itinerary updates
+      - Pretrip weather checks
+      - Routine bag weighing
+      - Arrival-day rest gaps
+      - Daily expense notes
+      - Reusable packing checklists
+      - Booking receipt storage
+      - Timely cancellation reviews
+  home_garden:
+    name: Home and garden
+    subject: home and outdoor care
+    clinical_topics: false
+    stat_organisation: Pelnavi Home Observatory
+    credentials:
+    - name: Horticulturist
+      voice_tier: lifestyle
+    - name: Landscape gardener
+      voice_tier: lifestyle
+    - name: Building maintenance specialist
+      voice_tier: accessible_precise
+    hooks:
+    - Preparing outdoor spaces for rain
+    - Keeping small spaces practical
+    - Planning seasonal maintenance
+    tips:
+      mistakes:
+      - Overwatered container plants
+      - Blocked drainage holes
+      - Buried plant crowns
+      - Crowded seed trays
+      - Unchecked fence fixings
+      - Painted-over damp patches
+      - Unventilated storage cupboards
+      - Forgotten gutter debris
+      - Wet tool storage
+      - Compacted planting beds
+      - Poorly placed climbing supports
+      - Unmeasured shelving gaps
+      red flags:
+      - Standing water near walls
+      - Soft timber around doors
+      - Persistent greenhouse mould
+      - Lifting paving corners
+      - Loose fence posts
+      - Leaking outdoor taps
+      - Roots circling nursery pots
+      - Peeling sealant near sinks
+      - Wilting despite wet soil
+      - Rust around tool joints
+      - Recurring gutter overflow
+      - Unstable retaining edges
+      signs:
+      - Yellow lower leaves
+      - Slow compost breakdown
+      - Damp patches behind furniture
+      - Algae on shaded paths
+      - Bare areas beneath trees
+      - Shrinking potting compost
+      - Loose cabinet hinges
+      - Crumbling window putty
+      - Soggy lawn edges
+      - Patchy seed germination
+      - Curling seedling leaves
+      - Water pooling on decking
+      tips:
+      - Finger-depth soil checks
+      - Clear drainage channels
+      - Seasonal tool cleaning
+      - Mulch spacing around stems
+      - Measured storage plans
+      - Staggered seed sowing
+      - Gentle seedling hardening
+      - Gutter inspection schedules
+      - Raised pot feet
+      - Shaded compost storage
+      - Secure climbing ties
+      - Small repair inventories
+      wastes of money:
+      - Unused lawn ornaments
+      - Oversized watering gadgets
+      - Duplicate pruning tools
+      - Unneeded seed multipacks
+      - Disposable plant markers
+      - Unused patio heaters
+      - Decorative compost bins
+      - Single-use paint trays
+      - Unmatched storage baskets
+      - Unnecessary potting additives
+      - Unused planting subscriptions
+      - Redundant hose fittings
+      habits:
+      - Weekly plant inspections
+      - Regular hinge tightening
+      - Seasonal fence checks
+      - Prompt spill drying
+      - Dry tool storage
+      - Rotating compost layers
+      - Measured watering routines
+      - Routine path sweeping
+      - Stored seed labelling
+      - Reused nursery pots
+      - Ventilated laundry drying
+      - Scheduled filter cleaning
+  sleep_health:
+    name: Sleep and health
+    subject: sleep routines
+    clinical_topics: true
+    stat_organisation: Nerqavi Rest Observatory
+    credentials:
+    - name: Sleep scientist
+      voice_tier: clinical
+    - name: Sleep medicine physician
+      voice_tier: clinical
+    - name: Occupational therapist
+      voice_tier: clinical
+    hooks:
+    - Settling into a regular bedtime
+    - Managing changes to a sleep schedule
+    - Making the bedroom comfortable
+    tips:
+      mistakes:
+      - Irregular waking times
+      - Late caffeinated drinks
+      - Extended evening naps
+      - Bright bedside screens
+      - Overheated sleeping spaces
+      - Repeated clock checking
+      - Noisy bedtime notifications
+      - Heavy meals before bed
+      - Crowded bedside surfaces
+      - Unplanned shift transitions
+      - Inconsistent morning light
+      - Weekend sleep swings
+      red flags:
+      - Persistent daytime drowsiness
+      - Repeated breathing pauses
+      - Regular morning headaches
+      - Prolonged sleep disruption
+      - Sudden sleep episodes
+      - Nightly choking sounds
+      - Persistent restless legs
+      - Frequent early waking
+      - Ongoing night discomfort
+      - Recurrent distressing dreams
+      - Unrefreshing long sleeps
+      - Regular night-time breathlessness
+      signs:
+      - Longer sleep-onset delays
+      - Repeated snooze use
+      - Drifting bedtime hours
+      - Increased afternoon yawning
+      - More frequent night waking
+      - Difficulty staying alert
+      - Reduced morning concentration
+      - Uneven weekend waking
+      - Bedtime worry loops
+      - Frequent evening dozing
+      - Waking with dry mouth
+      - Shortened sleep windows
+      tips:
+      - Consistent waking anchors
+      - Dim evening lighting
+      - Comfortable bedroom temperatures
+      - Quiet wind-down periods
+      - Planned caffeine cut-offs
+      - Morning daylight exposure
+      - Relaxed bedtime reading
+      - Muted night notifications
+      - Supportive pillow checks
+      - Brief daytime rest planning
+      - Shift-change sleep diaries
+      - Calm pre-bed transitions
+      wastes of money:
+      - Unused sleep-tracking rings
+      - Fragranced pillow bundles
+      - Duplicate blackout masks
+      - Expensive bedtime mists
+      - Unused sound subscriptions
+      - Unnecessary cooling gadgets
+      - Novelty alarm collections
+      - Oversized pillow stacks
+      - Single-use relaxation patches
+      - Unread sleep journals
+      - Unused weighted eye wraps
+      - Decorative night-light sets
+      habits:
+      - Regular waking routines
+      - Written sleep diaries
+      - Quiet evening reading
+      - Morning curtain opening
+      - Timely caffeine choices
+      - Gentle pre-bed stretching
+      - Consistent bedroom ventilation
+      - Planned shift recovery
+      - Brief bedtime preparation
+      - Regular bedding cleaning
+      - Calm notification settings
+      - Steady evening meal times
+  dental:
+    name: Dental
+    subject: everyday enamel care
+    clinical_topics: true
+    stat_organisation: Zeqnori Oral Care Observatory
+    credentials:
+    - name: Dentist
+      voice_tier: clinical
+    - name: Dental hygienist
+      voice_tier: clinical
+    - name: Prosthodontist
+      voice_tier: clinical
+    hooks:
+    - Protecting enamel during daily routines
+    - Preparing for a dental appointment
+    - Keeping oral care consistent
+    tips:
+      mistakes:
+      - Aggressive brushing pressure
+      - Frayed toothbrush bristles
+      - Skipped interdental cleaning
+      - Immediate brushing after acid
+      - Forgotten retainer cleaning
+      - Inconsistent evening brushing
+      - Frequent sugary sipping
+      - Abrasive home whitening
+      - Unchecked mouthguard fit
+      - Delayed broken-filling reviews
+      - Shared toothbrush storage
+      - Tobacco-stained appliance neglect
+      red flags:
+      - Persistent gum bleeding
+      - Unexplained loose teeth
+      - Lingering mouth ulcers
+      - New jaw swelling
+      - Ongoing tooth sensitivity
+      - Pain when biting
+      - Recurrent gum swelling
+      - Cracked denture edges
+      - Persistent mouth dryness
+      - New uneven bite
+      - Repeated filling fractures
+      - Unexplained mouth patches
+      signs:
+      - Flattened tooth edges
+      - Visible gum recession
+      - Chalky enamel patches
+      - Food trapping between teeth
+      - Morning jaw tenderness
+      - Worn mouthguard surfaces
+      - Recurrent bad breath
+      - Discomfort with cold drinks
+      - Rough filling margins
+      - Visible plaque deposits
+      - Changed denture fit
+      - Tender gums after cleaning
+      tips:
+      - Gentle brush pressure
+      - Soft-bristle brush choices
+      - Consistent interdental routines
+      - Water after acidic drinks
+      - Regular appliance cleaning
+      - Planned dental reviews
+      - Thorough back-tooth cleaning
+      - Clean brush storage
+      - Correct mouthguard care
+      - Balanced snack timing
+      - Retainer case ventilation
+      - Written symptom notes
+      wastes of money:
+      - Unverified whitening kits
+      - Abrasive charcoal powders
+      - Duplicate mouthguard cases
+      - Novelty toothbrush handles
+      - Unused dental subscriptions
+      - Expensive breath sprays
+      - Decorative brush sterilisers
+      - Single-use floss gadgets
+      - Unneeded whitening lights
+      - Premium travel cup sets
+      - Unused retainer fresheners
+      - Redundant tongue gadgets
+      habits:
+      - Twice-daily gentle brushing
+      - Daily interdental cleaning
+      - Regular brush replacement
+      - Clean retainer storage
+      - Timely symptom reporting
+      - Consistent appliance rinsing
+      - Water between meals
+      - Routine gum checks
+      - Regular dental attendance
+      - Careful mouthguard drying
+      - Written medication updates
+      - Balanced snack routines
+  pets:
+    name: Pets
+    subject: pet health and care
+    clinical_topics: true
+    stat_organisation: Vuqnari Pet Care Observatory
+    credentials:
+    - name: Veterinarian
+      voice_tier: clinical
+    - name: Veterinary nurse
+      voice_tier: clinical
+    - name: Veterinary nutritionist
+      voice_tier: clinical
+    hooks:
+    - Preparing for a routine vet visit
+    - Keeping pet care consistent
+    - Noticing changes in a pet routine
+    tips:
+      mistakes:
+      - Abrupt pet food changes
+      - Unmeasured pet portions
+      - Missed flea treatments
+      - Forgotten water-bowl cleaning
+      - Inconsistent exercise routines
+      - Delayed nail checks
+      - Unwashed pet bedding
+      - Unsafe chew choices
+      - Unsecured medicine storage
+      - Overheated travel crates
+      - Ignored dental discomfort
+      - Unrecorded appetite changes
+      red flags:
+      - Sudden pet appetite loss
+      - Repeated unproductive retching
+      - Difficulty passing urine
+      - Laboured resting breathing
+      - Persistent pet limping
+      - Unexplained pet weight loss
+      - Repeated pet vomiting
+      - Sudden eye cloudiness
+      - New balance problems
+      - Painful abdominal swelling
+      - Persistent ear discharge
+      - Abrupt behaviour changes
+      signs:
+      - More frequent water drinking
+      - Reduced play interest
+      - Uneven coat grooming
+      - Longer meal finishing
+      - Stiff rising after rest
+      - Frequent paw licking
+      - Repeated head shaking
+      - Changed litter-box habits
+      - Reduced jump confidence
+      - New food avoidance
+      - Increased night pacing
+      - Unusual hiding behaviour
+      tips:
+      - Measured feeding portions
+      - Gradual diet transitions
+      - Fresh water stations
+      - Safe transport carriers
+      - Routine paw checks
+      - Written appetite logs
+      - Clean bedding schedules
+      - Enrichment toy rotation
+      - Calm handling practice
+      - Regular weight records
+      - Secure household medicines
+      - Comfortable rest areas
+      wastes of money:
+      - Unused pet costume sets
+      - Duplicate feeding gadgets
+      - Unneeded grooming perfumes
+      - Decorative treat jars
+      - Oversized toy bundles
+      - Unused pet subscriptions
+      - Novelty pet furniture
+      - Unnecessary bowl warmers
+      - Redundant travel blankets
+      - Expensive accessory charms
+      - Unused training clickers
+      - Single-use paw wipes
+      habits:
+      - Daily water refreshes
+      - Regular pet weight checks
+      - Routine bowl washing
+      - Gradual enrichment changes
+      - Consistent feeding schedules
+      - Weekly coat inspections
+      - Calm carrier practice
+      - Recorded medication times
+      - Regular bedding washes
+      - Safe toy inspections
+      - Routine nail observations
+      - Planned exercise breaks
+  careers:
+    name: Careers and job search
+    subject: job applications
+    clinical_topics: false
+    stat_organisation: Qavneli Careers Observatory
+    credentials:
+    - name: Career coach
+      voice_tier: accessible_precise
+    - name: Recruitment adviser
+      voice_tier: accessible_precise
+    - name: Interview trainer
+      voice_tier: accessible_precise
+    hooks:
+    - Preparing for a first interview
+    - Making an application easier to read
+    - Comparing a new job offer
+    tips:
+      mistakes:
+      - Untailored application letters
+      - Missing achievement examples
+      - Unchecked contact details
+      - Late interview preparation
+      - Unexplained employment gaps
+      - Overlong personal statements
+      - Forgotten application deadlines
+      - Unread role criteria
+      - Vague portfolio captions
+      - Unpractised salary answers
+      - Missing follow-up notes
+      - Generic interview questions
+      red flags:
+      - Unclear pay ranges
+      - Unpaid extensive trial tasks
+      - Requests for recruitment fees
+      - Missing employer addresses
+      - Pressure to accept immediately
+      - Conflicting role descriptions
+      - Unexplained contract deductions
+      - Vague reporting structures
+      - Personal banking requests
+      - Unspecified working hours
+      - Repeated interview cancellations
+      - Undocumented offer changes
+      signs:
+      - Few application responses
+      - Repeated interview-stage exits
+      - Unclear career priorities
+      - Increasing application fatigue
+      - Outdated portfolio examples
+      - Longer commute estimates
+      - Growing role uncertainty
+      - Repeated skills mismatches
+      - Unanswered offer questions
+      - Inconsistent application versions
+      - Missed interview reminders
+      - Unfinished reference requests
+      tips:
+      - Role-specific evidence lists
+      - Concise achievement summaries
+      - Structured interview practice
+      - Saved application trackers
+      - Written offer comparisons
+      - Clear portfolio annotations
+      - Prepared salary ranges
+      - Reference contact checks
+      - Tailored opening statements
+      - Role research notes
+      - Thoughtful follow-up messages
+      - Interview route rehearsals
+      wastes of money:
+      - Generic application bundles
+      - Unused networking subscriptions
+      - Expensive portfolio themes
+      - Duplicate interview courses
+      - Unread career newsletters
+      - Unnecessary certificate frames
+      - Paid vacancy alert packs
+      - Unused résumé templates
+      - Premium printing packages
+      - Unneeded business card sets
+      - Unused coaching recordings
+      - Repeated headshot packages
+      habits:
+      - Weekly application reviews
+      - Regular portfolio updates
+      - Prompt interview confirmations
+      - Saved role descriptions
+      - Recorded achievement notes
+      - Consistent deadline tracking
+      - Routine contact checks
+      - Focused practice sessions
+      - Written interview reflections
+      - Updated reference lists
+      - Planned search breaks
+      - Clear offer documentation
+  parenting:
+    name: Parenting
+    subject: family routines
+    clinical_topics: false
+    stat_organisation: Zavqeli Family Observatory
+    credentials:
+    - name: Early-years educator
+      voice_tier: accessible_precise
+    - name: Family support worker
+      voice_tier: accessible_precise
+    - name: Parenting coach
+      voice_tier: lifestyle
+    hooks:
+    - Making school mornings manageable
+    - Preparing children for a routine change
+    - Sharing everyday family responsibilities
+    tips:
+      mistakes:
+      - Rushed school departures
+      - Overfilled activity schedules
+      - Unclear collection arrangements
+      - Forgotten school letters
+      - Inconsistent bedtime cues
+      - Missing transition warnings
+      - Unpacked evening schoolbags
+      - Unshared household tasks
+      - Delayed permission forms
+      - Competing morning instructions
+      - Unplanned childcare handovers
+      - Unlabelled school belongings
+      red flags:
+      - Repeated collection confusion
+      - Unclear emergency contacts
+      - Persistent routine distress
+      - Missing childcare information
+      - Conflicting handover messages
+      - Unexplained schedule changes
+      - Unanswered safeguarding questions
+      - Unsafe play-area access
+      - Inconsistent pickup permissions
+      - Unspecified activity supervision
+      - Repeated missed meals
+      - Overcrowded after-school plans
+      signs:
+      - Longer morning departures
+      - Increasing forgotten kit
+      - Repeated homework disputes
+      - Frequent activity clashes
+      - More rushed breakfasts
+      - Reduced unstructured play
+      - Unfinished school forms
+      - Recurrent handover misunderstandings
+      - Growing evening tiredness
+      - Difficulty leaving activities
+      - Unused family calendars
+      - Uneven chore sharing
+      tips:
+      - Evening schoolbag checks
+      - Shared collection calendars
+      - Gentle transition warnings
+      - Clear handover notes
+      - Simple visual routines
+      - Flexible play windows
+      - Prepared breakfast choices
+      - Accessible coat storage
+      - Calm homework spaces
+      - Short family planning chats
+      - Written contact lists
+      - Age-appropriate shared chores
+      wastes of money:
+      - Unused activity bundles
+      - Duplicate school stationery
+      - Oversized lunchbox collections
+      - Novelty reward gadgets
+      - Unread parenting subscriptions
+      - Unused craft multipacks
+      - Premium uniform hangers
+      - Repeated costume purchases
+      - Redundant homework timers
+      - Single-use party decorations
+      - Unused schoolbag charms
+      - Duplicate chore boards
+      habits:
+      - Regular family check-ins
+      - Shared calendar updates
+      - Evening kit preparation
+      - Calm collection handovers
+      - Routine contact reviews
+      - Planned free-play time
+      - Consistent bedtime cues
+      - Weekly school-letter sorting
+      - Clear task sharing
+      - Advance change warnings
+      - Regular bag clear-outs
+      - Quiet after-school pauses
+  cybersecurity:
+    name: Cybersecurity and scams
+    subject: phone and account security
+    clinical_topics: false
+    stat_organisation: Xeqnavi Security Observatory
+    credentials:
+    - name: Cybersecurity analyst
+      voice_tier: accessible_precise
+    - name: Digital forensics examiner
+      voice_tier: accessible_precise
+    - name: Fraud prevention specialist
+      voice_tier: accessible_precise
+    hooks:
+    - Spotting an unexpected account message
+    - Protecting a phone after a security alert
+    - Keeping household accounts secure
+    tips:
+      mistakes:
+      - Reused account passwords
+      - Shared recovery codes
+      - Unchecked sender addresses
+      - Delayed security updates
+      - Publicly shared travel plans
+      - Unverified payment links
+      - Forgotten device locks
+      - Exposed backup codes
+      - Unchecked app permissions
+      - Saved passwords on shared devices
+      - Ignored login alerts
+      - Unsecured router settings
+      red flags:
+      - Unexpected payment urgency
+      - Requests for login codes
+      - Unfamiliar recovery emails
+      - Altered bank details
+      - Unsolicited remote-access offers
+      - Misspelled sender domains
+      - Unexplained device registrations
+      - Unverified refund requests
+      - Pressure to keep secrets
+      - Unexpected attachment prompts
+      - Private-message payment demands
+      - Unusual account reset notices
+      signs:
+      - Unrecognised login sessions
+      - Unexpected password resets
+      - Unsent outgoing messages
+      - Changed recovery numbers
+      - New browser extensions
+      - Unexplained account lockouts
+      - Unfamiliar device administrators
+      - Redirected browser searches
+      - Unexpected mobile data use
+      - Disabled security notifications
+      - Unrequested forwarding rules
+      - New payment recipients
+      tips:
+      - Unique account passphrases
+      - Separate recovery storage
+      - Independent sender checks
+      - Prompt device updates
+      - Screen-lock timeouts
+      - Trusted contact callbacks
+      - Routine permission reviews
+      - Encrypted backup copies
+      - Secure router passwords
+      - Account session reviews
+      - Saved scam-reporting routes
+      - Restricted document sharing
+      wastes of money:
+      - Duplicate security subscriptions
+      - Unverified recovery services
+      - Paid password hints
+      - Unused privacy browser bundles
+      - Expensive webcam stickers
+      - Redundant phone-cleaner apps
+      - Unneeded certificate badges
+      - Premium breach alert packs
+      - Unused storage add-ons
+      - Novelty anti-scam charms
+      - Duplicate backup drives
+      - Unread security newsletters
+      habits:
+      - Regular session reviews
+      - Prompt update installation
+      - Routine backup checks
+      - Independent payment confirmation
+      - Careful permission approvals
+      - Secure code storage
+      - Weekly inbox rule checks
+      - Locked unattended screens
+      - Regular recovery-detail reviews
+      - Verified support contacts
+      - Thoughtful attachment opening
+      - Timely scam reporting
+  motoring:
+    name: Cars and motoring
+    subject: winter car care
+    clinical_topics: false
+    stat_organisation: Qorvani Motoring Observatory
+    credentials:
+    - name: Vehicle technician
+      voice_tier: accessible_precise
+    - name: Driving instructor
+      voice_tier: accessible_precise
+    - name: Automotive engineer
+      voice_tier: accessible_precise
+    hooks:
+    - Preparing a car for colder mornings
+    - Keeping routine maintenance affordable
+    - Planning a longer drive
+    tips:
+      mistakes:
+      - Engine idling for defrosting
+      - Ignored tyre pressures
+      - Delayed fluid checks
+      - Worn wiper blades
+      - Unsecured boot loads
+      - Skipped service records
+      - Overfilled fuel tanks
+      - Forgotten spare-wheel checks
+      - Unchecked battery terminals
+      - Abrupt cold-engine acceleration
+      - Unread warning lights
+      - Missed lamp inspections
+      red flags:
+      - Persistent brake grinding
+      - Uneven tyre wear
+      - Sweet cabin smells
+      - Repeated coolant loss
+      - Vibrating brake pedals
+      - Slow engine cranking
+      - Fresh fluid puddles
+      - Cracked tyre sidewalls
+      - Flickering dashboard lights
+      - Wandering steering response
+      - Unusual exhaust smoke
+      - Loose seat-belt fittings
+      signs:
+      - Longer stopping distances
+      - Slower window demisting
+      - Uneven engine idling
+      - Dimming headlights at rest
+      - Squeaking suspension joints
+      - Repeated low-pressure alerts
+      - Reduced washer spray
+      - Stiff steering at low speed
+      - Increased fuel use
+      - Shaking at cruising speed
+      - Uneven cabin heating
+      - Delayed gear engagement
+      tips:
+      - Cold tyre-pressure checks
+      - Clear windscreen preparation
+      - Planned service reminders
+      - Secure luggage positioning
+      - Fluid-level inspections
+      - Spare-wheel condition checks
+      - Clean lamp lenses
+      - Battery terminal reviews
+      - Gentle engine warm-up driving
+      - Journey rest planning
+      - Written repair estimates
+      - Seasonal wiper checks
+      wastes of money:
+      - Premium decorative valve caps
+      - Unused fuel additives
+      - Duplicate cleaning kits
+      - Expensive cabin perfumes
+      - Novelty gear-knob covers
+      - Unneeded paint protection extras
+      - Unused breakdown upgrades
+      - Redundant dashboard gadgets
+      - Disposable demisting wipes
+      - Decorative wheel lights
+      - Duplicate boot organisers
+      - Unused parking subscriptions
+      habits:
+      - Weekly lamp checks
+      - Regular pressure measurements
+      - Logged fuel consumption
+      - Timely service bookings
+      - Clean windscreen routines
+      - Prejourney load checks
+      - Routine washer refills
+      - Seasonal battery reviews
+      - Saved maintenance receipts
+      - Prompt warning-light checks
+      - Planned rest stops
+      - Gentle cold starts
+  food_nutrition:
+    name: Food and nutrition
+    subject: food storage and meal planning
+    clinical_topics: false
+    stat_organisation: Vezqali Food Observatory
+    credentials:
+    - name: Food scientist
+      voice_tier: accessible_precise
+    - name: Food safety specialist
+      voice_tier: accessible_precise
+    - name: Meal planning adviser
+      voice_tier: lifestyle
+    hooks:
+    - Making stored food easier to use
+    - Preparing meals for a busy week
+    - Reducing avoidable kitchen waste
+    tips:
+      mistakes:
+      - Unlabelled freezer portions
+      - Overfilled refrigerator shelves
+      - Unplanned bulk purchases
+      - Forgotten opened jars
+      - Warm leftovers left out
+      - Unchecked storage guidance
+      - Shared raw-food utensils
+      - Repeated meal-plan changes
+      - Unsealed dry ingredients
+      - Missing lunch preparation
+      - Unwashed reusable containers
+      - Ignored use-by dates
+      red flags:
+      - Swollen food packaging
+      - Broken jar seals
+      - Unexplained fridge warmth
+      - Damaged frozen-food bags
+      - Persistent container leaks
+      - Unclear allergen information
+      - Unlabelled prepared meals
+      - Recurring fridge condensation
+      - Frayed appliance seals
+      - Unrefrigerated chilled deliveries
+      - Incomplete cooking instructions
+      - Unexpected food discolouration
+      signs:
+      - Repeated discarded leftovers
+      - Frequent duplicate ingredients
+      - Crowded freezer drawers
+      - Increasing takeaway spending
+      - Unused fresh herbs
+      - Forgotten packed lunches
+      - Uneven portion sizes
+      - Unfinished weekly groceries
+      - Repeated midweek shopping
+      - Disorganised dry storage
+      - Growing unopened jar collections
+      - Missing meal ingredients
+      tips:
+      - Dated freezer labels
+      - Clear leftover containers
+      - Flexible weekly meal plans
+      - Fridge shelf zoning
+      - Measured batch portions
+      - Shared shopping inventories
+      - Dry-goods rotation
+      - Prepared lunch components
+      - Separate raw-food utensils
+      - Sealed ingredient storage
+      - Simple pantry reviews
+      - Planned leftover meals
+      wastes of money:
+      - Unused spiral-cutting gadgets
+      - Oversized spice collections
+      - Duplicate measuring sets
+      - Unused meal-plan subscriptions
+      - Premium storage decals
+      - Novelty lunchbox inserts
+      - Single-purpose peeling tools
+      - Unneeded bulk condiments
+      - Expensive herb scissors
+      - Unused smoothie accessories
+      - Decorative pantry scoops
+      - Redundant recipe binders
+      habits:
+      - Weekly fridge reviews
+      - Regular container cleaning
+      - Prompt leftover cooling
+      - Rotating older ingredients
+      - Written shopping lists
+      - Planned lunch preparation
+      - Clear date labelling
+      - Routine portion checks
+      - Separate utensil storage
+      - Regular pantry inventories
+      - Sealed dry-food storage
+      - Flexible leftover planning

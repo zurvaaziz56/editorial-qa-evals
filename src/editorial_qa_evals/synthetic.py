@@ -9,6 +9,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -17,6 +18,12 @@ import yaml
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from editorial_qa_evals.brief_catalog import (
+    BANNED,
+    check_diversity,
+    load_catalog,
+    sample_briefs,
+)
 from editorial_qa_evals.deterministic import Rules, load_rules, run_checks
 from editorial_qa_evals.draft_normalization import normalize_clean_draft
 from editorial_qa_evals.faults import RECIPES, apply_fault, available_recipes
@@ -28,37 +35,13 @@ from editorial_qa_evals.models import Entry
 ROOT = Path(__file__).resolve().parents[2]
 VERDICTS = ("READY", "REVISE", "MAJOR")
 PIECE_TYPES = ("simple_pitch_list", "qa", "cpr")
-# Fictional scenarios without expert identities or external facts.
-TOPICS = {
-    "mistakes": [
-        "Late pauses",
-        "Crowded routines",
-        "Rushed transitions",
-        "Missed breaks",
-        "Uneven rhythms",
-    ],
-    "red flags": [
-        "Restless evenings",
-        "Repeated interruptions",
-        "Unsettled mornings",
-        "Narrow recovery",
-        "Persistent overload",
-    ],
-    "tips": [
-        "Quiet pauses",
-        "Steady routines",
-        "Gentle transitions",
-        "Shared planning",
-        "Restful evenings",
-    ],
-    "waste of money": [
-        "Duplicate cushions",
-        "Unused organizers",
-        "Spare baskets",
-        "Novelty timers",
-        "Extra trays",
-    ],
-}
+
+
+class StatDraft(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    claim: str = Field(min_length=1)
+    relevant: bool
+    rationale: str = Field(min_length=1)
 
 
 class DraftItem(BaseModel):
@@ -66,11 +49,12 @@ class DraftItem(BaseModel):
     title: str = Field(min_length=1)
     paragraphs: list[str] = Field(min_length=1, max_length=3)
     question: str = Field(min_length=1)
+    statistic: StatDraft | None = None
 
 
 class Draft(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    items: list[DraftItem] = Field(min_length=5, max_length=5)
+    items: list[DraftItem] = Field(min_length=3, max_length=7)
 
 
 class Completion(Protocol):
@@ -116,44 +100,34 @@ def plan_entries(n: int, seed: int) -> list[PlannedEntry]:
     regions = ["UK"] * ((n + 1) // 2) + ["US"] * (n // 2)
     rng.shuffle(regions)
     labels = yaml.safe_load((ROOT / "rules/labels.yaml").read_text())["labels"]
+    catalog = load_catalog()
+    briefs = sample_briefs(n, rng, catalog)
     plans = []
     for index, kind in enumerate(types):
-        # Guarantee cost-label cases in each seed without forcing every piece to cost.
-        angle = (
-            "waste of money"
-            if kind == "simple_pitch_list" and index == types.index(kind)
-            else rng.choice(list(TOPICS))
+        sampled = dict(briefs[index])
+        task = sampled.pop("task_name")
+        angle = str(sampled["noun_category"])
+        label_key = (
+            "clinical red flags"
+            if angle == "red flags" and sampled["voice_tier"] == "clinical"
+            else angle
         )
-        tips = rng.sample(TOPICS[angle], 5)
-        clinical = index % 3 == 0
-        credential = (
-            "Clinical wellbeing practitioner" if clinical else "Psychotherapist"
-        )
-        headline_angle = "wastes of money" if angle == "waste of money" else angle
-        task = f"{credential} reveals 5 {headline_angle} in a fictional household"
         entry = Entry(
             id=f"syn-{index + 1:04d}",
             source="synthetic",
             piece_type=kind,
             region=regions[index],
             task_name=task,
-            brief={
-                "tips": tips,
-                "hook": "Everyday choices in an invented household",
-                "tone": "Clinical and precise"
-                if clinical
-                else "Accessible and precise",
-                "expert": {
-                    "credential": credential,
-                    "specialism": "Fictional household routines",
-                },
-            },
-            approved_labels=labels[angle] if kind == "simple_pitch_list" else [],
+            brief=sampled,
+            approved_labels=labels[label_key] if kind == "simple_pitch_list" else [],
             body="",
         )
         plans.append(
             PlannedEntry(entry, assigned.get(index, rng.choice(("REVISE", "MAJOR"))))
         )
+    issues = check_diversity([p.entry for p in plans])
+    if issues:
+        raise GenerationError("Invalid brief plan: " + "; ".join(issues))
     return plans
 
 
@@ -165,8 +139,92 @@ def _paragraph_count(entry: Entry) -> int:
     )
 
 
+@lru_cache(maxsize=12)
+def _stat_organisation(domain: str) -> str:
+    return load_catalog().domains[domain].stat_organisation
+
+
+def statistic_context(entry: Entry) -> dict[str, Any] | None:
+    """Only locally chosen metadata may appear in a generated source attribution."""
+    if entry.piece_type != "cpr":
+        return None
+    return {
+        "organisation": _stat_organisation(entry.brief.domain),
+        "region": entry.region,
+        "year": 2026,
+        "synthetic_source": True,
+        "instruction": (
+            "For every item propose a survey claim and assess its direct relevance "
+            "to that item's prose and brief tip. Set relevant=false if it adds no "
+            "support; that statistic will be omitted. Never invent real research."
+        ),
+    }
+
+
+def render_statistic(entry: Entry, item: DraftItem, index: int) -> str:
+    """Drop a failed semantic self-check; construct figures and attribution locally."""
+    statistic = item.statistic
+    if statistic is None:
+        raise DraftValidationError(
+            [
+                {
+                    "check_id": "STAT_REQUIRED",
+                    "item_number": index,
+                    "detail": "Each CPR item needs a statistic relevance self-check",
+                }
+            ]
+        )
+    if not statistic.relevant:
+        return ""
+    claim = statistic.claim
+    if (
+        claim != claim.strip()
+        or BANNED.search(claim)
+        or re.search(r"[\r\n*<>\d%£$.!?]|https?://|www\.", claim)
+        or len(claim.split()) > 40
+    ):
+        raise DraftValidationError(
+            [
+                {
+                    "check_id": "STAT_CONTENT",
+                    "item_number": index,
+                    "detail": (
+                        "Statistic claim must be plain non-numeric prose "
+                        "without meta-language"
+                    ),
+                    "evidence": claim,
+                }
+            ]
+        )
+    # The tip, not its item position, determines the synthetic figures. Resampling
+    # reorders tips without changing their statistic seed. No clock or network.
+    tip = entry.brief.tips[index - 1]
+    rng = random.Random(f"{entry.id}:{tip}:stat-v1")
+    percentage = rng.randint(18, 68)
+    sample = rng.choice((600, 800, 1200, 1600, 2000))
+    context = statistic_context(entry)
+    assert context is not None
+    return (
+        f"In a 2026 survey by {context['organisation']}, {percentage}% of "
+        f"{sample} {entry.region} respondents reported {claim} "
+        f"(tier 3, {entry.region}, 2026; "
+        f"https://source.invalid/survey/{entry.id}/{index})."
+    )
+
+
 def render_draft(entry: Entry, draft: Draft) -> Entry:
     """Render labels/numbering locally; the model generates only prose and questions."""
+    if len(draft.items) != len(entry.brief.tips):
+        raise DraftValidationError(
+            [
+                {
+                    "check_id": "ITEM_COUNT",
+                    "expected": len(entry.brief.tips),
+                    "actual": len(draft.items),
+                    "detail": "Draft count must equal brief tip count",
+                }
+            ]
+        )
     questions, answers, blocks = [], [], []
     for index, item in enumerate(draft.items, 1):
         if len(item.paragraphs) != _paragraph_count(entry):
@@ -184,6 +242,20 @@ def render_draft(entry: Entry, draft: Draft) -> Entry:
                 ]
             )
         for text in [item.title, item.question, *item.paragraphs]:
+            if BANNED.search(text):
+                raise DraftValidationError(
+                    [
+                        {
+                            "check_id": "BANNED_WORD",
+                            "item_number": index,
+                            "evidence": text,
+                            "detail": (
+                                "Draft text must omit fictional, "
+                                "invented and simulation"
+                            ),
+                        }
+                    ]
+                )
             if (
                 not text.strip()
                 or text != text.strip()
@@ -240,23 +312,19 @@ def render_draft(entry: Entry, draft: Draft) -> Entry:
             )
             blocks.append(f"{index}. {item.title}\n{sections}")
         else:
-            # Every statistic is locally authored and explicitly fictional, with a
-            # reserved nonresolving URL; it can never be mistaken for live sourcing.
-            statistic = (
-                f"In a fictional simulation, {index + 6} of 19 invented rooms "
-                f"used this approach (fictional source, tier 3, {entry.region}, 2026; "
-                f"https://source.invalid/simulation/{entry.id}/{index})."
-            )
+            statistic = render_statistic(entry, item, index)
             blocks.append(
-                f"{index}. {item.title}\n{item.paragraphs[0]}\n{statistic}\n"
-                f"Top tip: {item.paragraphs[1]}"
+                f"{index}. {item.title}\n{item.paragraphs[0]}\n"
+                + (statistic + "\n" if statistic else "")
+                + f"Top tip: {item.paragraphs[1]}"
             )
     body = "\n\n".join(blocks)
     if entry.piece_type == "cpr":
+        quote = draft.items[0].paragraphs[0].split(". ", 1)[0].rstrip(".") + "."
         body = (
-            f"The fictional {entry.brief.expert.credential.lower()} "
-            "works with invented household routines.\n\n"
-            "“Familiar routines can make room for a quiet pause.”\n\n" + body
+            f"The {entry.brief.expert.credential.lower()} "
+            f"{'specialises' if entry.region == 'UK' else 'specializes'} in "
+            f"{entry.brief.expert.specialism}.\n\n“{quote}”\n\n" + body
         )
     return entry.model_copy(
         update={"body": body, "questions": questions, "answers": answers}
@@ -278,8 +346,13 @@ class BatchGenerationError(GenerationError):
         )
 
 
-def draft_schema(paragraph_count: int) -> dict[str, Any]:
+def draft_schema(paragraph_count: int, item_count: int = 5) -> dict[str, Any]:
     schema = Draft.model_json_schema()
+    schema["properties"]["items"]["minItems"] = item_count
+    schema["properties"]["items"]["maxItems"] = item_count
+    # Strict output APIs require every declared key, with null for absent statistics.
+    schema["$defs"]["DraftItem"]["required"].append("statistic")
+    schema["$defs"]["DraftItem"]["properties"]["statistic"].pop("default", None)
     paragraphs = schema["$defs"]["DraftItem"]["properties"]["paragraphs"]
     paragraphs["minItems"] = paragraphs["maxItems"] = paragraph_count
     return schema
@@ -341,35 +414,26 @@ def prepare_clean_draft(
 
 
 def resample_entry(entry: Entry, seed: int, resample: int) -> Entry:
-    """Keep ID/region/type while sampling a new fictional brief deterministically."""
+    """Keep catalog assignments and tip ownership; vary order and hook for recovery.
+
+    Replacing tips from another entry's reserved pool would break uniqueness.
+    Reordering this entry's tips is a new prompt without consuming another pool.
+    """
     rng = random.Random(f"{seed}:{entry.id}:resample:{resample}")
-    angle = rng.choice(list(TOPICS))
-    tips = rng.sample(TOPICS[angle], 5)
+    tips = list(entry.brief.tips)
+    rng.shuffle(tips)
     if tips == entry.brief.tips:
         tips = tips[1:] + tips[:1]
-    credential = rng.choice(("Clinical wellbeing practitioner", "Psychotherapist"))
-    clinical = credential.startswith("Clinical")
-    labels = yaml.safe_load((ROOT / "rules/labels.yaml").read_text())["labels"]
-    headline_angle = "wastes of money" if angle == "waste of money" else angle
+    domain = load_catalog().domains[entry.brief.domain]
+    hooks = [hook for hook in domain.hooks if hook != entry.brief.hook]
     return entry.model_copy(
         update={
-            "task_name": (
-                f"{credential} reveals 5 {headline_angle} in a fictional household"
-            ),
             "brief": entry.brief.model_copy(
                 update={
                     "tips": tips,
-                    "tone": "Clinical and precise"
-                    if clinical
-                    else "Accessible and precise",
-                    "expert": entry.brief.expert.model_copy(
-                        update={"credential": credential}
-                    ),
+                    "hook": rng.choice(hooks),
                 }
-            ),
-            "approved_labels": labels[angle]
-            if entry.piece_type == "simple_pitch_list"
-            else [],
+            )
         }
     )
 
@@ -528,6 +592,7 @@ def generate_dataset(
             ROOT / "src/editorial_qa_evals" / filename
             for filename in (
                 "synthetic.py",
+                "brief_catalog.py",
                 "faults.py",
                 "parser.py",
                 "deterministic.py",
@@ -546,9 +611,13 @@ def generate_dataset(
         "n": n,
         "seed": seed,
         "model": model_name,
-        "generator_version": 2,
+        "generator_version": 3,
         "max_rpm": max_rpm,
-        "max_tokens": getattr(completion, "max_tokens", None),
+        "max_tokens": (
+            json.loads((replay_run / "config.json").read_text())["max_tokens"]
+            if replay_run
+            else getattr(completion, "max_tokens", None)
+        ),
         "max_attempts": 5,
         "max_resamples": 3,
         "python_version": platform.python_version(),
@@ -576,6 +645,7 @@ def generate_dataset(
     normalization_counts: Counter[str] = Counter()
     failed_ids: list[str] = []
     attempt_count = resample_count = 0
+    statistics: Counter[str] = Counter()
     for plan in plans:
         entry = plan.entry
         clean = None
@@ -603,7 +673,11 @@ def generate_dataset(
                 **entry.model_dump(exclude={"human", "injected_faults", "body"}),
                 "paragraphs_per_item": _paragraph_count(entry),
                 "forbidden_phrases": rules["phrases"],
-                "response_schema": draft_schema(_paragraph_count(entry)),
+                "voice_tier": entry.brief.voice_tier,
+                "statistic_context": statistic_context(entry),
+                "response_schema": draft_schema(
+                    _paragraph_count(entry), len(entry.brief.tips)
+                ),
             }
             history = []
             for attempt in range(1, 6):
@@ -663,6 +737,11 @@ def generate_dataset(
         if clean is None:
             failed_ids.append(entry.id)
             continue
+        if clean.piece_type == "cpr":
+            rendered = clean.body.count("https://source.invalid/survey/")
+            statistics.update(
+                {"rendered": rendered, "dropped": len(clean.brief.tips) - rendered}
+            )
         # No normalization or repair is permitted beyond this boundary.
         mutated, names = inject_faults(clean, plan.intended_verdict, rng, rules)
         confusion = verify_faults(mutated, names, rules)
@@ -696,6 +775,7 @@ def generate_dataset(
         "resamples": resample_count,
         "failure_summary": dict(sorted(failure_counts.items())),
         "normalization_counts": dict(sorted(normalization_counts.items())),
+        "cpr_statistics": dict(statistics),
         "smoke_entries": len(smoke),
         "missing_smoke_strata": [
             f"{kind}/{verdict}"
@@ -717,6 +797,11 @@ def generate_dataset(
     _json(run_dir / "validation.json", summary)
     if len(failed_ids) * 10 > n:
         raise BatchGenerationError(summary)
+    diversity_issues = check_diversity(entries)
+    if diversity_issues:
+        raise GenerationError(
+            "Survivor diversity failed: " + "; ".join(diversity_issues)
+        )
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(public, encoding="utf-8")
     (out.parent / "faults.jsonl").write_text(faults, encoding="utf-8")
