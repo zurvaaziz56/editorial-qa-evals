@@ -1,0 +1,20 @@
+{"id": "syn-0001", "entry_sha256": "43b87b4308f3bda91fa88520dd5e90da39d190e798f826f91012e67ff267a02d", "recipes": ["filler", "generic_credential"], "injected_faults": ["C10", "J4"], "intended_verdict": "REVISE"}
+{"id": "syn-0002", "entry_sha256": "58ffc896d39d449b37484f20d9fe676d35614eefcdfa5ffbc6f5f7f3075962dd", "recipes": ["dropped_tip"], "injected_faults": ["C13", "C4"], "intended_verdict": "MAJOR"}
+{"id": "syn-0003", "entry_sha256": "16705a710fde72e368aceca114d9237563c8b9db17b62284694b82bbdba9e5f4", "recipes": [], "injected_faults": [], "intended_verdict": "READY"}
+{"id": "syn-0004", "entry_sha256": "df5932527d3f938e185bc568b69a61b81b3662b7e700491559778583d5dea6ba", "recipes": [], "injected_faults": [], "intended_verdict": "READY"}
+{"id": "syn-0005", "entry_sha256": "fca57ff45a225ff42d13b7e6c6d378f7581ecb0592a133b8e6d2fc07d49efa22", "recipes": ["mini_labels", "intro_lines", "em_dash"], "injected_faults": ["C12", "C2", "C8"], "intended_verdict": "REVISE"}
+{"id": "syn-0006", "entry_sha256": "075c8fc6cfe84ba4eccd58c460f4aedc520f401bd3ac46ad201c7a99baf8930a", "recipes": ["count_minus", "intro_lines"], "injected_faults": ["C11", "C12", "C4"], "intended_verdict": "MAJOR"}
+{"id": "syn-0007", "entry_sha256": "02e20cf62567ff16961602de4404c1e1033ce6ea44eb4d4ae580448506d3387b", "recipes": ["count_plus", "region_swap"], "injected_faults": ["C11", "C9"], "intended_verdict": "MAJOR"}
+{"id": "syn-0008", "entry_sha256": "dc2d08dd15920d6c96b0509c8b7c4bd851fda7f161e667f3f3aed8221b54ddd4", "recipes": ["orphan_closers", "generic_credential", "dropped_tip"], "injected_faults": ["C10", "C12", "C13", "C4"], "intended_verdict": "MAJOR"}
+{"id": "syn-0009", "entry_sha256": "4825ecb8487b3976c3de2cfefa8fd3ca7429ed5429c767b5b7ee65ee895ebe72", "recipes": ["em_dash", "bundled_q5"], "injected_faults": ["C7", "C8"], "intended_verdict": "REVISE"}
+{"id": "syn-0010", "entry_sha256": "341949a020630aac2665758bb22476a58bf4554737ae86cec862a7085c77b3d4", "recipes": [], "injected_faults": [], "intended_verdict": "READY"}
+{"id": "syn-0011", "entry_sha256": "0fa6bb6df5b279a34daae190d00b7a9b20dc1176fa554cd9984821326777334e", "recipes": ["intro_lines"], "injected_faults": ["C12"], "intended_verdict": "REVISE"}
+{"id": "syn-0012", "entry_sha256": "96bf55136cd246c2f59aec51e1992e19ffae62007433679b153ff9381f50ce44", "recipes": ["em_dash"], "injected_faults": ["C8"], "intended_verdict": "REVISE"}
+{"id": "syn-0013", "entry_sha256": "0679166d2653fb8b9bf078c85f99a23e88ddfe43227fa08eaa8deb421ea547c8", "recipes": ["em_dash", "filler"], "injected_faults": ["C8", "J4"], "intended_verdict": "REVISE"}
+{"id": "syn-0014", "entry_sha256": "eef59c6d9733debb1bb28cd69d8814218e050b891517dcec05ba230ffb5241b0", "recipes": [], "injected_faults": [], "intended_verdict": "READY"}
+{"id": "syn-0015", "entry_sha256": "86912405fd492be92a0c71cb6d19c3e6c1a61cd46a5bbb64d69328422a319b12", "recipes": ["count_plus", "bundled_q5", "mixed_quotes"], "injected_faults": ["C11", "C6", "C7"], "intended_verdict": "MAJOR"}
+{"id": "syn-0016", "entry_sha256": "19c825b574b4821dbbcaf9324735411a53ace0f9319a45c84567d6e5365afdf9", "recipes": [], "injected_faults": [], "intended_verdict": "READY"}
+{"id": "syn-0017", "entry_sha256": "37589ff71d3d54ec5f5ab1dccbbd7030c75b71a0a0b362743955562b4a188c8b", "recipes": ["region_swap"], "injected_faults": ["C9"], "intended_verdict": "REVISE"}
+{"id": "syn-0018", "entry_sha256": "c5653ccae29255a34352516a19187ffd2130bf3b0f52f1257454b4b8d4583224", "recipes": ["generic_credential"], "injected_faults": ["C10"], "intended_verdict": "REVISE"}
+{"id": "syn-0019", "entry_sha256": "42d3b71978c2deb6d3380f6d709aa748b8ec8d867b36e4524000b419e56008ca", "recipes": ["generic_credential"], "injected_faults": ["C10"], "intended_verdict": "REVISE"}
+{"id": "syn-0020", "entry_sha256": "22bda3a95118a9670ced3e09f670616c8aa66de9f986f110cd8a8f0c28fc83c8", "recipes": ["filler"], "injected_faults": ["J4"], "intended_verdict": "REVISE"}
