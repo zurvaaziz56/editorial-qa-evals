@@ -20,13 +20,25 @@ on:
         type: number
 
       max_tokens:
-        description: Maximum output tokens per generation request
+        description: Base output tokens (adds 500 per item and 200 per CPR statistic; cap 8000)
         required: true
         default: "2048"
         type: number
 
+      deadline_minutes:
+        description: Stop generation cleanly after this many minutes (maximum 75)
+        required: true
+        default: "75"
+        type: number
+      resume_run:
+        description: Prior run ID whose provenance checkpoint should be resumed (same n and seed)
+        required: false
+        default: ""
+        type: string
+
 permissions:
   contents: write
+  actions: read
 
 concurrency:
   group: generate-synthetic-main
@@ -47,28 +59,56 @@ jobs:
           python-version: "3.12"
       - run: pip install uv
       - run: uv sync --locked
+      - name: Restore checkpoint artifact
+        if: inputs.resume_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESUME_RUN: ${{ inputs.resume_run }}
+        run: |
+          [[ "$RESUME_RUN" =~ ^[0-9]+$ ]] || exit 2
+          gh run download "$RESUME_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "synthetic-generation-provenance-$RESUME_RUN" \
+            --dir "$RUNNER_TEMP/generation-resume"
       - name: Generate and validate
         env:
           N: ${{ inputs.n }}
           SEED: ${{ inputs.seed }}
           MAX_TOKENS: ${{ inputs.max_tokens }}
           MAX_RPM: ${{ inputs.max_rpm }}
+          DEADLINE_MINUTES: ${{ inputs.deadline_minutes }}
+          RESUME_RUN: ${{ inputs.resume_run }}
           JUDGE_BASE_URL: ${{ secrets.JUDGE_BASE_URL }}
           JUDGE_MODEL: ${{ secrets.JUDGE_MODEL }}
           JUDGE_API_KEY: ${{ secrets.JUDGE_API_KEY }}
         run: |
+          python -c 'import os; d=float(os.environ["DEADLINE_MINUTES"]); assert 0 < d <= 75'
+          resume_args=()
+          if [[ -n "$RESUME_RUN" ]]; then
+            resume_args=(--resume "$RUNNER_TEMP/generation-resume/checkpoint.json")
+          fi
           uv run python scripts/generate_synthetic.py \
             --n "$N" --seed "$SEED" --max-rpm "$MAX_RPM" --max-tokens "$MAX_TOKENS" \
+            --deadline-minutes "$DEADLINE_MINUTES" "${resume_args[@]}" \
             --out "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" \
             --run-dir "$RUNNER_TEMP/synthetic-generation/provenance"
       - name: Report public dataset diversity
         run: |
-          uv run python scripts/diversity_report.py \
-            "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" > "$RUNNER_TEMP/diversity-report.md"
+          if uv run python scripts/diversity_report.py \
+            "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" > "$RUNNER_TEMP/diversity-report.md"; then
+            :
+          else
+            # Deadline survivors may not yet satisfy whole-batch distribution caps.
+            python -c 'import json, os; from pathlib import Path; s=json.loads((Path(os.environ["RUNNER_TEMP"])/"synthetic-generation/provenance/validation.json").read_text()); assert s["deadline_reached"]'
+          fi
           cat "$RUNNER_TEMP/diversity-report.md"
           cat "$RUNNER_TEMP/diversity-report.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Publish main and orphan faults branches atomically
-        run: bash scripts/publish_synthetic.sh "$RUNNER_TEMP/synthetic-generation"
+        run: |
+          if [[ -s "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" ]]; then
+            bash scripts/publish_synthetic.sh "$RUNNER_TEMP/synthetic-generation"
+          else
+            echo "No completed entries; checkpoint retained, existing dataset preserved." >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Retain generation provenance
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,6 +1,6 @@
 ---
 name: synthetic-clean-body
-version: "2.0"
+version: "2.1"
 checks: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C10, C11, C12, C13, J1, J2, J3, J4, J5, J6, J7]
 ---
 
@@ -27,7 +27,7 @@ restates the headline. All tips must be covered exactly once.
 Deliver the noun category in brief.noun_category: mistakes are wrong actions;
 red flags are warning signals; signs are observable indicators; tips are useful
 approaches; wastes of money are unnecessary purchases; habits are repeated
-behaviours. Follow the hook and headline's editorial promise.
+beneficial behaviours unless the headline explicitly says bad habits. Follow the hook and headline's editorial promise.
 
 Use voice_tier explicitly:
 - clinical: precise, measured language without colloquialisms; explain uncertainty

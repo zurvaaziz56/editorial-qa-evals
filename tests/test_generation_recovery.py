@@ -215,10 +215,10 @@ def test_ten_percent_threshold_and_continued_batch(
         assert not out.exists()
         assert not out.with_name("faults.jsonl").exists()
     assert len(counts) == 20  # Later IDs still run after earlier ones exhaust recovery.
-    assert all(counts[id] == 20 for id in failed_ids)
+    assert all(counts[id] == 8 for id in failed_ids)
     summary = json.loads((run / "validation.json").read_text())
-    assert summary["failure_summary"] == {"SCHEMA": failed_count * 20}
-    assert summary["resamples"] == failed_count * 3
+    assert summary["failure_summary"] == {"SCHEMA": failed_count * 8}
+    assert summary["resamples"] == failed_count
 
 
 def test_dynamic_schema_keeps_required_paragraph_count() -> None:
@@ -244,7 +244,7 @@ def test_partial_resampled_run_replays_without_model_calls(tmp_path: Path) -> No
     out, run = tmp_path / "public/synthetic.jsonl", tmp_path / "run"
     summary = synthetic.generate_dataset(20, 7, out, run, completion, max_rpm=7)
     assert summary["failed_ids"] == ["syn-0001"]
-    assert summary["resamples"] == 4
+    assert summary["resamples"] == 2
 
     def forbidden(system: str, user: str, seed: int) -> dict[str, Any]:
         pytest.fail("Offline replay must not call the API")
@@ -282,11 +282,12 @@ def test_cli_prints_failure_summary_and_passes_max_rpm(
             else response(user)
         )
 
-    def client(*args: Any, **kwargs: Any) -> Any:
-        seen.append(kwargs["max_rpm"])
-        return completion
+    class Client:
+        def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+            seen.append(kwargs["max_rpm"])
+            return completion
 
-    monkeypatch.setattr(synthetic, "GenerationClient", client)
+    monkeypatch.setattr(synthetic, "GenerationClient", Client)
     monkeypatch.setattr(synthetic, "load_dotenv", lambda: None)
     for name, value in (
         ("JUDGE_BASE_URL", "https://generation.invalid/v1"),
@@ -310,6 +311,6 @@ def test_cli_prints_failure_summary_and_passes_max_rpm(
     )
     assert result.exit_code == 1
     assert seen == [7]
-    assert '"failure_summary"' in result.output and '"SCHEMA": 60' in result.output
+    assert '"failure_summary"' in result.output and '"SCHEMA": 24' in result.output
     assert "more than 10% failed" in result.output
     assert not out.exists()

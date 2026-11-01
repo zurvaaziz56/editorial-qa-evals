@@ -1,6 +1,6 @@
 # Synthetic generation and fault reconciliation
 
-This covers Task 3 and the Task 3b representative-brief update. Generation produces
+This covers Task 3, representative briefs and Fix 3c reliability recovery. Generation produces
 fictional entries and recipe metadata;
 it does not produce human labels, judge predictions, agreement metrics or a
 labeling UI. Existing tests use mocked completions and temporary outputs. No
@@ -25,16 +25,37 @@ live dataset or API call is needed for cloud validation.
    accidental real entities and any unsupported factual claims. Do not inspect
    the faults branch or raw clean responses during blind human labeling.
 
-If secrets are missing, generation fails before requesting a model. One bad
-entry does not stop the batch: after five attempts on its original brief, it
-gets up to three reordered/re-hooked briefs, each with five attempts. Its ID, region, piece type
-and intended class remain stable. API and validation failures are logged; later
-IDs still run after an entry exhausts recovery. The run fails when more than
-10% of requested entries remain ungenerated (exactly 10% is accepted). On failure,
-no new public dataset or fault sidecar is written and publication does not run.
-Attempt provenance and a per-check failure summary are retained even on failure.
-The summary counts failed attempts by check, independently of the count of
-entries that ultimately failed. No failed body is accepted as a clean draft.
+If secrets are missing, generation fails before requesting a model. The total
+budget is eight actual API requests per entry, including transport retries,
+format fallback, token escalation and brief resamples. Validation gets up to
+five attempts on the original brief before recovery reorders tips/re-hooks it;
+all recovery shares the remaining budget. IDs, region, piece type and intended
+class stay stable. No failed draft is accepted as clean. Ordinary exhausted
+runs still fail if more than 10% of entries are missing.
+
+`deadline_minutes` defaults to 75 (the workflow permits at most 75), leaving
+15 minutes before the job timeout for output, artifact upload and publication.
+The deadline covers throttling and backoff; a wait beyond it stops immediately.
+In-flight requests use at most the remaining time as their HTTP timeout. At the
+deadline the generator writes validated survivors and missing IDs, even if more
+than 10% are missing. These provisional deadline datasets may miss diversity
+caps; the summary records each violation and missing smoke stratum explicitly.
+A zero-entry run retains its checkpoint but never replaces the public dataset.
+Invalid configuration, I/O failures and broken fault-detection invariants still
+fail and cannot publish corrupt data.
+
+Each completed entry and matching hidden fault row is atomically checkpointed
+immediately in provenance `checkpoint.json`. This artifact is hidden generation
+metadata, never labeling input or a tracked file. To continue, enter the previous
+workflow run ID in `resume_run`, retaining the same n, seed, base token budget,
+rate, model and code version. The workflow downloads that run's provenance via
+its existing repository token and passes `--resume <checkpoint.json>`. Prompt,
+rule, source, Python and config hashes must match; a mismatched checkpoint is
+rejected. Completed entries are reused without requests; request counts for
+incomplete entries remain capped at eight across resume. Fault mutations use
+per-ID seeds, so resuming does not shift later entries' recipe assignments.
+Use the newest run ID for successive resumes. Expired artifacts and runs from
+before Fix 3c without a checkpoint cannot resume.
 
 Accepted partial runs contain only validated survivors. They report requested
 and actual sizes, failed IDs, type/region counts and missing smoke strata. The
@@ -73,10 +94,11 @@ Approved labels come only from `rules/labels.yaml`. Nonmedical red flags use
 "What to check next"; clinical red flags use "When to seek professional advice".
 
 The seeded planner balances domains, credentials within domains and templates,
-consuming every selected tip from its pool once. Actual public survivors must
+consuming every selected tip from its pool once. Outside deadline partials, survivors must
 satisfy domain <=15%, credential <=10%, template <=25%, and no exact brief tip
 reuse across entries (case-insensitive). These are hard limits, not rounded
-shares; invalid survivors are not published. With 864 candidates, the catalog is
+shares; invalid survivors are not published. Deadline partials report cap violations for
+completion through resume. With 864 candidates, the catalog is
 finite: an infeasible request fails before API calls and asks for fewer entries
 or more unique candidates. It never silently reuses a tip to fill a quota.
 Recovery retains domain, credential, template, category, count and ownership of
@@ -89,7 +111,7 @@ precise and lifestyle credentials use their corresponding registers. These
 semantic requirements still need human review; deterministic validation cannot
 establish medical accuracy or writing quality.
 
-The prompt is versioned in `prompts/synthetic/generate_body.md` (v2.0). The model
+The prompt is versioned in `prompts/synthetic/generate_body.md` (v2.1). The model
 returns structured titles, questions, prose and CPR statistic self-checks.
 Numbering, labels, attribution, standfirst and source metadata are rendered
 locally. Each prose paragraph contains two or three sentences. No draft text
@@ -124,24 +146,41 @@ operation, before and after in attempt provenance. Paragraph counts, content,
 question format and all final deterministic checks remain enforced. Nothing is
 normalized after fault injection, so deliberate C8/J2 faults remain observable.
 
-Each request includes a strict JSON schema with the exact required paragraph
-array length when supported. A clear structured-output capability rejection
-switches the client to plain JSON mode for subsequent requests. Invalid schemas,
-authentication errors and ordinary missing-endpoint errors do not trigger a
-silent downgrade. Both modes still use the same local validation.
+Before any API call, brief validation checks the headline count and noun
+category, verb polarity, natural domain phrase and tip membership in the curated
+category pool. “Warns of” goes with mistakes, red flags, signs or wastes of money;
+“shares”/“reveals” goes with tips or beneficial habits. Bad-habit headlines cannot
+reuse the beneficial habit pool. Domain wording uses phrases such as “for dog
+owners” and “when booking a holiday”. This validates the local brief contract;
+it does not claim semantic validation of model prose.
 
-On failed validation, the next prompt includes the exact failed check IDs and
-evidence, or structural error location/expected/actual values. Feedback accumulates
-for at most five attempts per brief before resampling. Transport errors, 429s
-and server errors receive bounded backoff; TLS verification stays enabled.
-`--max-rpm` (default 20) sets a minimum interval between all API requests,
-including retries and schema fallback. The client uses standard chat messages
-with the configured model and temperature zero, without provider SDKs.
-`--max-tokens` (default 2048, also a workflow input) caps output tokens explicitly
-so providers do not reserve a large model-default completion budget. This does
-not cap input tokens or guarantee compliance with account token quotas. Numeric
-`Retry-After` delays are honored in full, including waits longer than 60 seconds;
-transient retries remain limited to three attempts.
+Each entry starts with strict JSON-schema output and the actual item/paragraph
+counts. Any HTTP 400 changes that entry to `json_object`; if that shape fails,
+raise the token budget once by 2048 (cap 8000), then stop on another 400.
+Truncated (`finish_reason=length`) responses use the same recovery sequence.
+A 400 request shape is never resent. Transient errors allow at most two
+identical requests, and all requests share the eight-request entry cap. Both
+formats retain the same local validation; no invalid body becomes acceptable.
+Clear non-400 capability rejections still negotiate JSON mode.
+
+`max_tokens` / `--max-tokens` is now the base budget, default 2048. Each brief
+adds 500 tokens per item and CPR adds 200 per planned statistic, capped at 8000.
+For seven-item CPR the initial budget is 6948. Model IDs containing `gpt-oss`
+receive the standard `reasoning_effort="low"` request parameter. Other models
+receive no reasoning parameter. Account input/token quotas still apply.
+
+`--max-rpm` remains the initial maximum rate, default 20. Every 429 reduces the
+rate by multiplying the minimum request interval by 1.5 for the remaining run.
+Numeric and HTTP-date Retry-After values set a cooldown honored even when the
+client returns to validation/recovery. Waits crossing the deadline stop cleanly.
+Transport and server errors have bounded backoff; TLS verification stays enabled.
+
+Every failed HTTP request gets an `api_failed` attempt record with HTTP status,
+provider error code and a redacted provider error body of at most 2048 UTF-8
+bytes. Parent validation attempts retain these diagnostics too, including errors
+recovered by format fallback. Credentials, bearer tokens and URLs are redacted;
+request headers are never persisted. The job summary groups failures by HTTP
+status and provider code, separately from validation-check counts and missing IDs.
 No semantic judge from a later task is implemented or invoked.
 
 ## Fault recipes
@@ -246,7 +285,7 @@ The count distribution uses brief counts, so deliberate count faults do not
 misrepresent planning. Word frequencies include final public prose (including
 injected faults) while excluding stop words, URLs and survey attribution names.
 
-Prompt v2 has no judge/agreement baseline to refresh: no evaluated run or
+Prompt v2.1 has no judge/agreement baseline to refresh: no evaluated run or
 `data/baseline.json` exists yet. This changes synthetic generation only. Preserve
 the current trial data until a new manual workflow is deliberately run, and
 review sample bodies again before creating a final human labeling set.

@@ -9,14 +9,14 @@ count_weights:
 - 0.5
 - 0.25
 headline_templates:
-  reveals: '{credential} reveals {count} {category} in {subject}'
-  warns: '{credential} warns of {count} {category} in {subject}'
-  according: '{count} {category} in {subject}, according to {article} {credential_lower}'
-  explains: '{credential} explains {count} {category} that matter for {subject}'
-  shares: '{credential} shares {count} {category} linked to {subject}'
-  guide: '{article_cap} {credential_lower}''s guide to {count} {category} in {subject}'
-  look: '{count} {category} in {subject}: {article} {credential_lower} takes a closer look'
-  highlights: '{credential} highlights {count} {category} worth reviewing in {subject}'
+  reveals: '{credential} {verb} {count} {category} {subject}'
+  warns: '{credential} {verb} {count} {category} to consider {subject}'
+  according: '{count} {category} {subject}, according to {article} {credential_lower}'
+  explains: '{credential} explains {count} {category} {subject}'
+  shares: '{credential} {verb} {count} {category} {subject}'
+  guide: '{article_cap} {credential_lower}''s guide to {count} {category} {subject}'
+  look: '{count} {category} {subject}: {article} {credential_lower} takes a closer look'
+  highlights: '{credential} highlights {count} {category} {subject}'
 domains:
   personal_finance:
     name: Personal finance
