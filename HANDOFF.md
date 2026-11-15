@@ -42,7 +42,25 @@ Latest trial, run 43683421416 (n=20, seed=11, max_rpm=10, model openai/gpt-oss-1
   8), syn-0013 (API 400).
 - Injected deterministic faults were all detected (C2, C6, C8, C9, C11, C12, J4: 0 missed).
 
-Suggested next fix ("3d"), smallest change first:
+Content review of the 17 entries that passed in that run (from the run's checkpoint artifact):
+
+- Fixed: 12 domains, 17 distinct credentials, counts of 3, 5 and 7, zero occurrences of
+  "fictional", "invented", "simulation" or "household". CPR statistics now support their item
+  (named made-up organisation, sample size, region, `.invalid` URL).
+- Still wrong, fix before n=80:
+  1. Headlines are concatenated fragments and read unnaturally: "5 wastes of money for a better
+     sleep routine", "warns of 5 signs when applying for a job", "3 signs for everyday dental
+     care", "3 mistakes to consider when storing food". Signs and red flags need an object
+     ("5 signs your CV is being filtered out"). Prefer curated full headline patterns per
+     domain and noun category, or one LLM call that writes the headline and is validated.
+  2. Credential and domain mismatches: an occupational therapist on sleep routines, a baggage
+     specialist on booking holidays. Tighten the catalog pairing.
+  3. The C9 region fault inserts a filler sentence ("A colour detail matters.") instead of
+     swapping words already in the body. It is a giveaway to both the labeler and the judge.
+     Region faults must substitute existing terms (color/colour, vacation/holiday, $/GBP).
+     Review the other injected-sentence recipes for the same problem.
+
+Suggested next fix ("3d", after the items above), smallest change first:
 1. Normalise before validating clean drafts: capitalise the question and append "?" when the
    text is a single interrogative; this removes QUESTION_FORMAT failures without an API call.
 2. For J3, put the sentence-count rule and one worked example at the top of
@@ -50,7 +68,8 @@ Suggested next fix ("3d"), smallest change first:
    paragraph with "split this into two or three sentences".
 3. Allow the publish step to commit a partial set when the deadline or failure threshold is hit
    and report missing ids, so 17 good entries are not thrown away.
-4. Then run n=20 again; if at least 19 pass, run n=80, seed=7.
+4. Then run n=20 again; read ten entries; if at least 19 pass and headlines read naturally,
+   run n=80, seed=7.
 Fallback if the model keeps failing J3: change the `JUDGE_MODEL` secret to another
 OpenAI-compatible model; no code change is needed.
 
