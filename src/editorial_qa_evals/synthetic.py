@@ -3,10 +3,13 @@
 import hashlib
 import json
 import math
+import os
 import platform
 import random
 import re
+import time
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -23,13 +26,14 @@ from editorial_qa_evals.brief_catalog import (
     check_diversity,
     load_catalog,
     sample_briefs,
+    validate_brief,
 )
 from editorial_qa_evals.deterministic import Rules, load_rules, run_checks
 from editorial_qa_evals.draft_normalization import normalize_clean_draft
 from editorial_qa_evals.faults import RECIPES, apply_fault, available_recipes
 from editorial_qa_evals.fingerprints import entry_sha256
 from editorial_qa_evals.generation_client import GenerationClient
-from editorial_qa_evals.generation_errors import GenerationError
+from editorial_qa_evals.generation_errors import DeadlineReached, GenerationError
 from editorial_qa_evals.models import Entry
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -565,9 +569,17 @@ def generate_dataset(
     model_name: str = "mock",
     replay_run: Path | None = None,
     max_rpm: float = 20,
+    deadline_minutes: float = 75,
+    resume: Path | None = None,
+    clock: Callable[[], float] = time.monotonic,
 ) -> dict[str, Any]:
     if not math.isfinite(max_rpm) or max_rpm <= 0:
         raise GenerationError("max-rpm must be a finite positive number")
+    if not math.isfinite(deadline_minutes) or deadline_minutes <= 0:
+        raise GenerationError("deadline-minutes must be finite and positive")
+    deadline = clock() + deadline_minutes * 60
+    if isinstance(completion, GenerationClient):
+        completion.deadline = deadline
     outputs = [out, out.parent / "faults.jsonl", out.parent / "smoke_ids.txt"]
     if out.name in {"faults.jsonl", "smoke_ids.txt"}:
         raise GenerationError("Public output uses a reserved sidecar filename")
@@ -579,6 +591,9 @@ def generate_dataset(
         ):
             raise GenerationError("Public/sidecar outputs must not overlap provenance")
     plans = plan_entries(n, seed)
+    catalog = load_catalog()
+    for plan in plans:
+        validate_brief(plan.entry, catalog)
     rules = load_rules()
     prompt_path = ROOT / "prompts/synthetic/generate_body.md"
     prompt = prompt_path.read_text()
@@ -611,14 +626,14 @@ def generate_dataset(
         "n": n,
         "seed": seed,
         "model": model_name,
-        "generator_version": 3,
+        "generator_version": 4,
         "max_rpm": max_rpm,
         "max_tokens": (
             json.loads((replay_run / "config.json").read_text())["max_tokens"]
             if replay_run
             else getattr(completion, "max_tokens", None)
         ),
-        "max_attempts": 5,
+        "max_attempts": 8,
         "max_resamples": 3,
         "python_version": platform.python_version(),
     }
@@ -639,17 +654,84 @@ def generate_dataset(
     _json(run_dir / "prompt_hashes.json", hashes)
     _json(run_dir / "source_hashes.json", sources)
     entries, fault_rows = [], []
+    used: Counter[str] = Counter()
+    completed: dict[str, dict[str, Any]] = {}
+    replay_summary = (
+        json.loads((replay_run / "validation.json").read_text()) if replay_run else None
+    )
+    if replay_run:
+        saved = json.loads((replay_run / "checkpoint.json").read_text())
+        for id, row in saved["completed"].items():
+            if not any(
+                (replay_run / "attempts").glob(f"{id}-resample-*-attempt-*.json")
+            ):
+                completed[id] = row
+                used[id] = saved["used"][id]
+    if resume:
+        saved = json.loads(resume.read_text())
+        if (
+            saved["config"] != config
+            or saved["hashes"] != hashes
+            or saved["sources"] != sources
+        ):
+            raise GenerationError(
+                "Resume configuration or prompt/rule/source hashes differ"
+            )
+        completed = saved["completed"]
+        used.update(saved["used"])
+        if isinstance(completion, GenerationClient):
+            completion.states = saved["client_states"]
+
+    def checkpoint() -> None:
+        value = {
+            "config": config,
+            "hashes": hashes,
+            "sources": sources,
+            "completed": completed,
+            "used": dict(used),
+            "client_states": completion.states
+            if isinstance(completion, GenerationClient)
+            else {},
+        }
+        temporary = run_dir / "checkpoint.tmp"
+        _json(temporary, value)
+        temporary.replace(run_dir / "checkpoint.json")
+
+    checkpoint()
     totals: dict[str, Counter[str]] = {}
-    rng = random.Random(seed)
     failure_counts: Counter[str] = Counter()
     normalization_counts: Counter[str] = Counter()
     failed_ids: list[str] = []
     attempt_count = resample_count = 0
     statistics: Counter[str] = Counter()
+    deadline_reached = False
+    http_failures: Counter[str] = Counter()
+    provider_failures: Counter[str] = Counter()
     for plan in plans:
         entry = plan.entry
+        if entry.id in completed:
+            row = completed[entry.id]
+            entries.append(Entry.model_validate(row["entry"]))
+            fault_rows.append(row["fault"])
+            for check, counts in row["confusion"].items():
+                totals.setdefault(check, Counter()).update(counts)
+            statistics.update(row["statistics"])
+            continue
+        if clock() >= deadline or (
+            replay_run
+            and replay_summary
+            and replay_summary["deadline_reached"]
+            and not any(
+                (replay_run / "attempts").glob(f"{entry.id}-resample-*-attempt-*.json")
+            )
+        ):
+            deadline_reached = True
+        if deadline_reached:
+            failed_ids.append(entry.id)
+            continue
         clean = None
         last_failures: list[dict[str, Any]] = []
+        terminal = False
         for resample in range(4):  # Original brief plus at most three replacements.
             if resample:
                 previous = entry
@@ -681,6 +763,13 @@ def generate_dataset(
             }
             history = []
             for attempt in range(1, 6):
+                if clock() >= deadline:
+                    deadline_reached = True
+                    break
+                if used[entry.id] >= 8:
+                    break
+                validate_brief(entry, catalog)
+                used[entry.id] += 1
                 attempt_count += 1
                 filename = f"{entry.id}-resample-{resample}-attempt-{attempt}.json"
                 raw_path = Path("raw") / filename
@@ -695,9 +784,16 @@ def generate_dataset(
                 )
                 user = json.dumps(payload, ensure_ascii=False) + feedback
                 changes: list[dict[str, Any]] = []
+                api_events: list[dict[str, Any]] = []
+                terminal = False
                 try:
                     if replay_run:
                         recorded = json.loads((replay_run / attempt_path).read_text())
+                        api_events = recorded.get("api_failures", [])
+                        terminal = recorded.get("terminal", False)
+                        used[entry.id] = recorded.get("requests_used", used[entry.id])
+                        if recorded["status"] == "deadline":
+                            raise DeadlineReached("Recorded deadline")
                         if recorded["status"] == "api_failed":
                             raise GenerationError(recorded["failures"][0]["detail"])
                         raw = json.loads((replay_run / raw_path).read_text())
@@ -708,10 +804,29 @@ def generate_dataset(
                         entry, raw, rules
                     )
                     status = "passed" if clean is not None else "validation_failed"
+                except DeadlineReached:
+                    deadline_reached = True
+                    clean = None
+                    last_failures = [
+                        {"check_id": "DEADLINE", "detail": "Soft deadline reached"}
+                    ]
+                    status = "deadline"
                 except GenerationError as error:
                     clean = None
                     last_failures = [{"check_id": "API", "detail": str(error)}]
                     status = "api_failed"
+                if isinstance(completion, GenerationClient) and not replay_run:
+                    api_events = completion.events
+                    used[entry.id] = completion.states[entry.id]["requests"]
+                    terminal = completion.states[entry.id]["blocked"]
+                # Persist every failed HTTP request, including recovered failures.
+                for index, event in enumerate(api_events):
+                    http_failures.update([str(event["http_status"])])
+                    provider_failures.update([event["provider_error_code"]])
+                    _json(
+                        run_dir / "attempts" / f"{filename[:-5]}-http-{index}.json",
+                        {"id": entry.id, "status": "api_failed", **event},
+                    )
                 normalization_counts.update(change["operation"] for change in changes)
                 failure_counts.update(
                     {failure["check_id"] for failure in last_failures}
@@ -723,27 +838,54 @@ def generate_dataset(
                         "resample": resample,
                         "attempt": attempt,
                         "status": status,
+                        "api_failures": api_events,
+                        "http_status": api_events[-1]["http_status"]
+                        if api_events
+                        else None,
+                        "provider_error_code": api_events[-1]["provider_error_code"]
+                        if api_events
+                        else None,
+                        "requests_used": used[entry.id],
+                        "terminal": terminal,
+                        "provider_error_body": api_events[-1]["provider_error_body"]
+                        if api_events
+                        else None,
                         "normalizations": changes,
                         "failures": last_failures,
                         "brief": payload,
-                        "raw_path": str(raw_path) if status != "api_failed" else None,
+                        "raw_path": str(raw_path)
+                        if status in {"passed", "validation_failed"}
+                        else None,
                     },
                 )
-                if clean is not None:
+                checkpoint()
+                if clean is not None or deadline_reached:
+                    break
+                if terminal:
                     break
                 history.append({"attempt": attempt, "failures": last_failures})
-            if clean is not None:
+            if clean is not None or deadline_reached or used[entry.id] >= 8:
+                break
+            if terminal:
                 break
         if clean is None:
             failed_ids.append(entry.id)
             continue
+        entry_stats: dict[str, int] = {}
         if clean.piece_type == "cpr":
             rendered = clean.body.count("https://source.invalid/survey/")
-            statistics.update(
-                {"rendered": rendered, "dropped": len(clean.brief.tips) - rendered}
-            )
+            entry_stats = {
+                "rendered": rendered,
+                "dropped": len(clean.brief.tips) - rendered,
+            }
+            statistics.update(entry_stats)
         # No normalization or repair is permitted beyond this boundary.
-        mutated, names = inject_faults(clean, plan.intended_verdict, rng, rules)
+        mutated, names = inject_faults(
+            clean,
+            plan.intended_verdict,
+            random.Random(f"{seed}:{entry.id}:faults"),
+            rules,
+        )
         confusion = verify_faults(mutated, names, rules)
         for check, counts in confusion.items():
             totals.setdefault(check, Counter()).update(counts)
@@ -759,6 +901,13 @@ def generate_dataset(
                 "intended_verdict": plan.intended_verdict,
             }
         )
+        completed[entry.id] = {
+            "entry": mutated.model_dump(mode="json"),
+            "fault": fault_rows[-1],
+            "confusion": confusion,
+            "statistics": entry_stats,
+        }
+        checkpoint()
     intended = {row["id"]: row["intended_verdict"] for row in fault_rows}
     smoke = select_smoke(entries, intended, seed, allow_partial=bool(failed_ids))
     public = "".join(
@@ -774,6 +923,10 @@ def generate_dataset(
         "attempts": attempt_count,
         "resamples": resample_count,
         "failure_summary": dict(sorted(failure_counts.items())),
+        "http_status_failures": dict(sorted(http_failures.items())),
+        "provider_error_failures": dict(sorted(provider_failures.items())),
+        "deadline_reached": deadline_reached,
+        "diversity_issues": check_diversity(entries),
         "normalization_counts": dict(sorted(normalization_counts.items())),
         "cpr_statistics": dict(statistics),
         "smoke_entries": len(smoke),
@@ -795,10 +948,17 @@ def generate_dataset(
         "faults_sha256": _hash(faults.encode()),
     }
     _json(run_dir / "validation.json", summary)
-    if len(failed_ids) * 10 > n:
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a") as stream:
+            stream.write(
+                "### Generation summary\n\n```json\n"
+                + json.dumps(summary, indent=2)
+                + "\n```\n"
+            )
+    if len(failed_ids) * 10 > n and not deadline_reached:
         raise BatchGenerationError(summary)
     diversity_issues = check_diversity(entries)
-    if diversity_issues:
+    if diversity_issues and not deadline_reached:
         raise GenerationError(
             "Survivor diversity failed: " + "; ".join(diversity_issues)
         )
@@ -820,11 +980,11 @@ def main(
     run_dir: Path | None = None,
     replay_run: Path | None = None,
     max_rpm: float = typer.Option(20, min=0.001),
-    max_tokens: int = typer.Option(2048, min=1),
+    max_tokens: int = typer.Option(2048, min=1, max=8000),
+    deadline_minutes: float = typer.Option(75, min=0.001),
+    resume: Path | None = None,
 ) -> None:
     """Generate fictional entries. Run live generation only in the manual workflow."""
-    import os
-
     load_dotenv()
     run_dir = run_dir or Path("runs") / (
         "generation-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
@@ -853,7 +1013,16 @@ def main(
                 max_tokens=max_tokens,
             )
         summary = generate_dataset(
-            n, seed, out, run_dir, completion, model_name, replay_run, max_rpm
+            n,
+            seed,
+            out,
+            run_dir,
+            completion,
+            model_name,
+            replay_run,
+            max_rpm,
+            deadline_minutes,
+            resume,
         )
     except BatchGenerationError as error:
         typer.echo(json.dumps(error.summary, indent=2), err=True)
@@ -863,6 +1032,9 @@ def main(
         # Do not print request headers, endpoint credentials or raw model content.
         typer.echo(f"Generation failed: {error}", err=True)
         raise typer.Exit(1) from None
+    finally:
+        if "completion" in locals() and isinstance(completion, GenerationClient):
+            completion.close()
     typer.echo(json.dumps(summary, indent=2))
 
 

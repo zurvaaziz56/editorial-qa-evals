@@ -128,10 +128,7 @@ def test_unsupported_strict_schema_falls_back_once_and_is_cached(status: int) ->
     [
         (401, "json_schema not supported; sensitive auth details"),
         (403, "json_schema not supported"),
-        (400, "Invalid schema in response_format: required must contain title"),
         (422, "Invalid JSON schema with unsupported keyword"),
-        (400, "Unrelated model configuration is unsupported"),
-        (400, "Malformed request"),
         (404, "Not found"),
         (404, "The requested model was not found"),
     ],
@@ -155,7 +152,7 @@ def test_other_errors_do_not_downgrade_schema(status: int, message: str) -> None
 def test_retries_and_subsequent_calls_all_obey_the_same_rate_limit() -> None:
     clock = FakeClock()
     times = []
-    statuses = iter([429, 503, 200, 200])
+    statuses = iter([429, 200, 200])
 
     def handler(request: httpx.Request) -> httpx.Response:
         times.append(clock())
@@ -163,9 +160,9 @@ def test_retries_and_subsequent_calls_all_obey_the_same_rate_limit() -> None:
 
     client = client_with(handler, clock)
     client("system", user_prompt(), 7)
-    client("system", user_prompt(), 7)
-    assert times == [0, 3, 6, 9]
-    assert clock.delays == [1, 2, 2, 1, 3]
+    client("system", user_prompt() + "\nnext validation attempt", 7)
+    assert times == [0, 4.5, 9]
+    assert client._interval == 4.5
 
 
 def test_custom_rpm_changes_minimum_request_spacing() -> None:
@@ -177,8 +174,8 @@ def test_custom_rpm_changes_minimum_request_spacing() -> None:
         return httpx.Response(200, json={})
 
     client = client_with(handler, clock, max_rpm=10)
-    for _ in range(3):
-        client("system", user_prompt(), 7)
+    for i in range(3):
+        client("system", user_prompt() + f"\nrequest {i}", 7)
     assert times == [0, 6, 12]
 
 
@@ -206,9 +203,9 @@ def test_transport_retries_are_bounded_without_printing_provider_details() -> No
         raise httpx.ConnectError("sensitive transport message", request=request)
 
     client = client_with(handler, clock)
-    with pytest.raises(GenerationError, match="three attempts") as error:
+    with pytest.raises(GenerationError, match="two attempts") as error:
         client("system", user_prompt(), 7)
-    assert times == [0, 3, 6]
+    assert times == [0, 3]
     assert "sensitive" not in str(error.value)
 
 

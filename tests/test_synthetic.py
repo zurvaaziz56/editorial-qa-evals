@@ -175,7 +175,7 @@ def test_invalid_drafts_retry_without_public_outputs(tmp_path: Path) -> None:
     out = tmp_path / "out/synthetic.jsonl"
     with pytest.raises(GenerationError, match="more than 10% failed"):
         generate_dataset(20, 7, out, tmp_path / "run", invalid)
-    assert len(calls) == 20 * 5 * 4
+    assert len(calls) == 20 * 8
     assert not out.exists()
     assert not out.with_name("faults.jsonl").exists()
     assert "Validation feedback" in calls[1]
@@ -262,17 +262,22 @@ def test_http_client_is_provider_neutral_and_retries() -> None:
             ),
         )
 
+    from test_generation_client import FakeClock
+
+    clock = FakeClock()
     client = GenerationClient(
         "https://generation.invalid/v1",
         "fictional-model",
         "test-key",
         transport=httpx.MockTransport(handler),
-        sleep=delays.append,
+        sleep=clock.sleep,
+        clock=clock,
     )
+    delays = clock.delays
     client("system", "user", 7)
     assert delays[0] == 1
     assert len(delays) == 2
-    assert 0 < delays[1] <= 3
+    assert delays[1] == 3.5
     assert str(requests[0].url) == "https://generation.invalid/v1/chat/completions"
     assert requests[0].headers["Authorization"] == "Bearer test-key"
     payload = json.loads(requests[0].content)
@@ -420,7 +425,7 @@ def test_transport_failure_retries_are_bounded() -> None:
     )
     with pytest.raises(GenerationError, match="transport failed") as error:
         client("system", "user", 7)
-    assert len(attempts) == 3
+    assert len(attempts) == 2
     assert "sensitive" not in str(error.value)
 
 
@@ -446,7 +451,7 @@ def test_prompt_and_label_table_match_public_contract() -> None:
     prompt = (ROOT / "prompts/synthetic/generate_body.md").read_text()
     metadata = yaml.safe_load(prompt.split("---", 2)[1])
     assert metadata["name"] == "synthetic-clean-body"
-    assert metadata["version"] == "2.0"
+    assert metadata["version"] == "2.1"
     assert len(metadata["checks"]) == 20
     labels = yaml.safe_load((ROOT / "rules/labels.yaml").read_text())["labels"]
     assert labels["mistakes"] == ["Why it's a mistake", "What to do instead"]

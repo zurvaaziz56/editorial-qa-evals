@@ -11,8 +11,8 @@ from silently degrading agreement.
 
 ## Status
 
-Task 3b adds catalog-driven, diverse brief sampling and representative CPR
-statistics to model-backed clean-body generation,
+Fix 3c adds bounded request recovery, adaptive token budgets and throttling,
+checkpoint resume and coherent headlines to model-backed clean-body generation,
 controlled fault recipes and a manual generation workflow. The parser, ten
 deterministic checks, CLI and entry schema remain available. Judge, routing,
 metrics and reporting modules remain empty; the browser labeling page is still
@@ -80,17 +80,26 @@ After merging this task, add repository Actions secrets `JUDGE_BASE_URL`,
 `JUDGE_MODEL` and `JUDGE_API_KEY`. The base URL is a chat API root, usually ending
 in `/v1`, without credentials or query parameters. Run **Actions → Generate
 synthetic entries → Run workflow** on `main`, with `n=80`, `seed=7` and
-`max_rpm=20` and `max_tokens=2048`. Lower the output token cap if the provider
-rejects a request against its token budget; RPM alone does not control token usage.
+`max_rpm=20` and `max_tokens=2048`. Lower the base token budget if the provider
+rejects a request against its token quota; RPM alone does not control token usage.
 Do not call the generation API from a Codex cloud task.
 
-The job normalizes clean draft typography/title casing, then validates before
-injecting zero to three faults. Final validation remains strict; injected faults
-are never normalized. Exact validation feedback, five attempts per brief and up
-to three brief resamples recover individual entries. A run fails only when more
-than 10% remain ungenerated; accepted partial runs report missing IDs, final size
-and smoke coverage. The default throttle is 20 requests per minute, including
-capability fallback and bounded retries for rate limits/server errors. The default plan
+The job normalizes clean draft typography/title casing, validates, then injects
+zero to three faults. Fix 3c caps each entry at eight total requests, including
+retries and resamples. HTTP 400 and truncation switch to JSON-object output,
+then raise the token budget once. The base `max_tokens=2048` adds 500 per item
+and 200 per CPR statistic, capped at 8000; model IDs containing `gpt-oss` use low
+reasoning effort. Every 429 honors Retry-After and reduces the request rate.
+Redacted provider errors and counts by status/code appear in provenance and the
+job summary.
+
+`deadline_minutes=75` stops cleanly before the 90-minute job timeout, publishing
+validated survivors with missing IDs and diversity warnings. Completed entries
+are checkpointed immediately. Set `resume_run` to the previous run ID with the
+same n, seed and configuration to continue without regenerating completed IDs.
+An empty run preserves the existing dataset. Ordinary non-deadline runs retain
+the 10% missing-entry limit. See [generation and recovery](docs/GENERATION.md)
+for checkpoint compatibility and partial-data limitations. The default plan
 has 45 simple pitch lists, 20 Q&A and 15 CPR entries,
 40 entries per region and 20 clean entries. Publication atomically updates
 `data/golden/synthetic.jsonl` and `data/smoke_ids.txt` on `main`, plus the separate
@@ -103,7 +112,7 @@ names, brands or statistics before labeling. Keep fault assignments and raw
 generation provenance out of the labeling process. Model prose uses unnamed synthetic
 experts. The catalog covers twelve domains,
 36 credentials with voice tiers, six noun categories and eight headline templates.
-Counts are sampled from 3/5/7 with weights .25/.5/.25. Actual outputs enforce
+Counts are sampled from 3/5/7 with weights .25/.5/.25. Completed batches enforce
 maximum shares of 15% per domain, 10% per credential and 25% per template, with
 no exact brief tip reused across entries. Finite catalog capacity is checked
 before model calls. The job summary reports these distributions and the top-25
@@ -124,7 +133,7 @@ uv run python scripts/diversity_report.py data/golden/synthetic.jsonl
 
 Earlier trial datasets without catalog metadata must be regenerated to pass the
 new diversity report. Run the manual workflow after merge, then review ten
-entries again before labeling. Prompt v2 changes future generation; it does not
+entries again before labeling. Prompt v2.1 changes future generation; it does not
 rewrite the current trial dataset.
 
 See [generation and reconciliation](docs/GENERATION.md) for recipe applicability,

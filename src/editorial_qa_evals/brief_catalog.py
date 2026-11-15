@@ -108,6 +108,7 @@ def load_catalog(path: Path = ROOT / "rules/brief_catalog.yaml") -> Catalog:
         "count",
         "category",
         "subject",
+        "verb",
         "article",
         "article_cap",
     }
@@ -119,7 +120,8 @@ def load_catalog(path: Path = ROOT / "rules/brief_catalog.yaml") -> Catalog:
                 credential_lower="dentist",
                 count=5,
                 category="habits",
-                subject="oral care",
+                subject="for oral care",
+                verb="shares",
                 article="a",
                 article_cap="A",
             )
@@ -154,10 +156,66 @@ def headline(
         credential_lower=credential.name.lower(),
         count=count,
         category=category,
-        subject=domain.subject,
+        subject=DOMAIN_PHRASES[domain.subject],
+        verb=(
+            "warns of"
+            if category in NEGATIVE
+            else "shares"
+            if template == "shares"
+            else "reveals"
+        ),
         article="an" if credential.name[0].lower() in "aeiou" else "a",
         article_cap="An" if credential.name[0].lower() in "aeiou" else "A",
     )
+
+
+NEGATIVE = {"mistakes", "red flags", "signs", "wastes of money"}
+DOMAIN_PHRASES = {
+    "household budgets": "for household budgets",
+    "property viewings and mortgage deals": (
+        "when viewing a property or choosing a mortgage"
+    ),
+    "travel planning": "when booking a holiday",
+    "home and outdoor care": "for looking after a home and garden",
+    "sleep routines": "for a better sleep routine",
+    "everyday enamel care": "for everyday dental care",
+    "pet health and care": "for dog owners",
+    "job applications": "when applying for a job",
+    "family routines": "for family life",
+    "phone and account security": "for keeping phones and accounts secure",
+    "winter car care": "for winter car care",
+    "food storage and meal planning": "when storing food and planning meals",
+}
+
+
+def validate_brief(entry: Entry, catalog: Catalog | None = None) -> None:
+    """Check catalog membership, polarity and natural domain wording before API use.
+
+    Tip semantics come from the curated category pools; arbitrary prose cannot be
+    classified reliably with a regex. All habit pools describe beneficial routines.
+    """
+    catalog = catalog or load_catalog()
+    brief = entry.brief
+    if brief.domain not in catalog.domains or brief.noun_category not in CATEGORIES:
+        raise GenerationError("Brief requires a catalog domain and noun category")
+    domain = catalog.domains[brief.domain]
+    category = brief.noun_category
+    title = entry.task_name.casefold()
+    bad_habits = category == "habits" and "bad habits" in title
+    negative = category in NEGATIVE or bad_habits
+    if "warns of" in title and not negative:
+        raise GenerationError("Headline warns of beneficial tips or habits")
+    if any(v in title for v in (" shares ", " reveals ")) and negative:
+        raise GenerationError("Headline verb does not match its negative noun category")
+    count = re.search(r"\b(\d+)\s+(?:bad\s+)?" + re.escape(category) + r"\b", title)
+    if count is None or int(count.group(1)) != len(brief.tips):
+        raise GenerationError("Headline count or noun category differs from brief")
+    if DOMAIN_PHRASES[domain.subject] not in entry.task_name:
+        raise GenerationError("Headline needs a natural domain phrase")
+    if bad_habits or not set(brief.tips) <= set(domain.tips[category]):
+        raise GenerationError(
+            "Tips do not match the headline category or habit polarity"
+        )
 
 
 def sample_briefs(

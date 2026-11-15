@@ -28,6 +28,8 @@ def test_workflow_is_manual_and_keeps_secrets_in_generation_step() -> None:
         "SEED",
         "MAX_RPM",
         "MAX_TOKENS",
+        "DEADLINE_MINUTES",
+        "RESUME_RUN",
         "JUDGE_BASE_URL",
         "JUDGE_MODEL",
         "JUDGE_API_KEY",
@@ -64,4 +66,27 @@ def test_diversity_report_reaches_job_summary_before_publication() -> None:
     assert "|" not in report["run"]  # Keep the reporter's failure exit status.
     assert steps.index(report) < next(
         i for i, s in enumerate(steps) if s.get("name", "").startswith("Publish")
+    )
+
+
+def test_deadline_and_resume_are_available_in_manual_workflow() -> None:
+    doc = yaml.load(
+        (ROOT / ".github/workflows/generate.yml").read_text(), Loader=yaml.BaseLoader
+    )
+    inputs = doc["on"]["workflow_dispatch"]["inputs"]
+    assert inputs["deadline_minutes"]["default"] == "75"
+    assert inputs["resume_run"]["required"] == "false"
+    steps = doc["jobs"]["generate"]["steps"]
+    restore = next(s for s in steps if s.get("name") == "Restore checkpoint artifact")
+    assert 'gh run download "$RESUME_RUN"' in restore["run"]
+    assert doc["permissions"]["actions"] == "read"
+    generate = next(s for s in steps if s.get("name") == "Generate and validate")
+    assert (
+        '--resume "$RUNNER_TEMP/generation-resume/checkpoint.json"' in generate["run"]
+    )
+    assert '--deadline-minutes "$DEADLINE_MINUTES"' in generate["run"]
+    assert "0 < d <= 75" in generate["run"]
+    publish = next(s for s in steps if s.get("name", "").startswith("Publish"))
+    assert (
+        '[[ -s "$RUNNER_TEMP/synthetic-generation/synthetic.jsonl" ]]' in publish["run"]
     )
